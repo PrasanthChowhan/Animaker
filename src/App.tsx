@@ -1,0 +1,1 @@
+function App() { return <div>Animaker V2 Clean Start</div>; } export default App;

@@ -10,6 +10,40 @@
             "command": "node .gemini/hooks/pnpm-rewrite.js"
           }
         ]
+      },
+      {
+        "matcher": "ask_user",
+        "hooks": [
+          {
+            "name": "notify-ask",
+            "type": "command",
+            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File .gemini/hooks/notify-user.ps1 -Message 'I have a question for you!'"
+          }
+        ]
+      }
+    ],
+    "AfterAgent": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "name": "notify-turn-end",
+            "type": "command",
+            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File .gemini/hooks/notify-user.ps1 -Message 'Turn finished. Waiting for your prompt.'"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "name": "notify-permission",
+            "type": "command",
+            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File .gemini/hooks/notify-user.ps1 -Message 'Action required: Tool permission needed.'"
+          }
+        ]
       }
     ]
   }

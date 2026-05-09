@@ -52,4 +52,28 @@ test('selecting a clip updates the inspector', async () => {
   // Check if inspector shows clip properties
   expect(screen.getByText(/Clip Properties/i)).toBeInTheDocument();
   expect(screen.getByPlaceholderText(/Enter prompt.../i)).toBeInTheDocument();
+  expect(screen.getByText(/Primary Color/i)).toBeInTheDocument();
+});
+
+test('updating prompt and text content updates project state', async () => {
+  render(<MainEditor project={mockProject} onBackToDashboard={() => {}} />);
+  
+  // Add and select clip
+  const aiClipButton = screen.getByText(/Drag or click to add animation/i);
+  fireEvent.click(aiClipButton);
+  const clips = await screen.findAllByText(/New AI Clip/i);
+  fireEvent.click(clips[0]);
+  
+  // Update prompt
+  const promptArea = screen.getByPlaceholderText(/Enter prompt.../i);
+  fireEvent.change(promptArea, { target: { value: 'Make it blue' } });
+  expect(promptArea).toHaveValue('Make it blue');
+  
+  // Update text content
+  const textInput = screen.getByDisplayValue(/New AI Clip/i);
+  fireEvent.change(textInput, { target: { value: 'Updated Title' } });
+  
+  // The clip on the timeline should update its text
+  const updatedClips = await screen.findAllByText(/Updated Title/i);
+  expect(updatedClips.length).toBeGreaterThan(0);
 });

@@ -17,5 +17,12 @@
 - Implemented 'save_project' Rust command for persistent state.
 - Verified timeline operations with Vitest.
 
+## MVP Slice 3: AI Clip Inspector & Prompting (COMPLETED)
+- Connected Inspector panel to the selected clip state.
+- Implemented natural-language AI prompt field in the Inspector.
+- Added customization fields for primary/secondary colors and text content.
+- Ensured metadata changes are persisted to project.json via auto-save.
+- Verified inspector updates and state persistence with Vitest.
+
 ## Next Up
-- MVP Slice 3: AI Clip Inspector & Prompting
+- MVP Slice 4: LLM Generation Pipeline

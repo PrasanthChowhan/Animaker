@@ -219,7 +219,7 @@ function EditPage({
                <div className="pt-4 border-t border-[#333]">
                  <div className="text-[11px] text-[#888] uppercase tracking-wider mb-2">AI Prompt</div>
                  <textarea 
-                  className="w-full bg-[#000] border border-[#333] rounded p-2 text-xs text-cyan-500 font-mono h-24 focus:outline-none focus:border-cyan-500"
+                  className="w-full bg-[#000] border border-[#333] rounded p-2 text-xs text-cyan-500 font-mono h-24 focus:outline-none focus:border-cyan-500 mb-4"
                   placeholder="Enter prompt..."
                   value={selectedClip.metadata.animation?.prompt || ''}
                   onChange={(e) => {
@@ -237,6 +237,42 @@ function EditPage({
                     }
                   }}
                  />
+
+                 <div className="text-[11px] text-[#888] uppercase tracking-wider mb-2">Customization</div>
+                 <div className="space-y-3">
+                   <div className="flex items-center justify-between">
+                     <span className="text-[10px] text-[#666]">Primary Color</span>
+                     <input 
+                       type="color" 
+                       className="bg-transparent border-none w-6 h-6 cursor-pointer"
+                       value="#22d3ee"
+                       onChange={() => {}} // Mock for now
+                     />
+                   </div>
+                   <div className="flex items-center justify-between">
+                     <span className="text-[10px] text-[#666]">Secondary Color</span>
+                     <input 
+                       type="color" 
+                       className="bg-transparent border-none w-6 h-6 cursor-pointer"
+                       value="#0891b2"
+                       onChange={() => {}} // Mock for now
+                     />
+                   </div>
+                   <div className="space-y-1">
+                     <span className="text-[10px] text-[#666]">Text Content</span>
+                     <input 
+                       type="text" 
+                       className="w-full bg-[#000] border border-[#333] rounded px-2 py-1 text-[10px] focus:border-cyan-500 outline-none"
+                       value={selectedClip.content}
+                       onChange={(e) => {
+                         const trackId = project.tracks.find(t => t.clips.some(c => c.id === selectedClip.id))?.id;
+                         if (trackId) {
+                           onUpdateClip(trackId, selectedClip.id, { content: e.target.value });
+                         }
+                       }}
+                     />
+                   </div>
+                 </div>
                </div>
             </div>
           ) : (

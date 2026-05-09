@@ -55,6 +55,7 @@ pub trait ProjectStore: Send + Sync {
 
 pub mod file_system;
 pub mod render;
+pub mod llm;
 #[cfg(test)]
 mod tests;
 

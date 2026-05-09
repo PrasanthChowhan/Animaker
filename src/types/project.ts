@@ -27,6 +27,10 @@ export interface Clip {
     animation?: {
       prompt?: string;
       presetId?: string;
+      customizations?: {
+        text?: string;
+        color?: string;
+      };
       generatedHtml?: string;
       generatedCss?: string;
       generatedJs?: string;

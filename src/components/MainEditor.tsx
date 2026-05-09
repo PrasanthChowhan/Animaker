@@ -158,7 +158,44 @@ function EditPage({
   onAddClip: (trackId: string) => void,
   onUpdateClip: (trackId: string, clipId: string, updates: Partial<any>) => void
 }) {
+  const [isGenerating, setIsGenerating] = useState(false);
   const selectedClip = project.tracks.flatMap(t => t.clips).find(c => c.id === selectedClipId);
+
+  const handleGenerate = async () => {
+    if (!selectedClip) return;
+    
+    setIsGenerating(true);
+    try {
+      const result = await invoke<any>('generate_clip_code', {
+        request: {
+          prompt: selectedClip.metadata.animation?.prompt || selectedClip.content,
+          preset_id: selectedClip.metadata.animation?.presetId || 'default',
+          width: project.width,
+          height: project.height,
+          duration: selectedClip.duration
+        }
+      });
+
+      const trackId = project.tracks.find(t => t.clips.some(c => c.id === selectedClip.id))?.id;
+      if (trackId) {
+        onUpdateClip(trackId, selectedClip.id, {
+          metadata: {
+            ...selectedClip.metadata,
+            animation: {
+              ...selectedClip.metadata.animation,
+              generatedHtml: result.html,
+              generatedCss: result.css,
+              generatedJs: result.js
+            }
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Generation failed:', err);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -241,38 +278,80 @@ function EditPage({
                  <div className="text-[11px] text-[#888] uppercase tracking-wider mb-2">Customization</div>
                  <div className="space-y-3">
                    <div className="flex items-center justify-between">
-                     <span className="text-[10px] text-[#666]">Primary Color</span>
+                     <label htmlFor="primary-color" className="text-[10px] text-[#666]">Primary Color</label>
                      <input 
+                       id="primary-color"
                        type="color" 
                        className="bg-transparent border-none w-6 h-6 cursor-pointer"
-                       value="#22d3ee"
-                       onChange={() => {}} // Mock for now
-                     />
-                   </div>
-                   <div className="flex items-center justify-between">
-                     <span className="text-[10px] text-[#666]">Secondary Color</span>
-                     <input 
-                       type="color" 
-                       className="bg-transparent border-none w-6 h-6 cursor-pointer"
-                       value="#0891b2"
-                       onChange={() => {}} // Mock for now
-                     />
-                   </div>
-                   <div className="space-y-1">
-                     <span className="text-[10px] text-[#666]">Text Content</span>
-                     <input 
-                       type="text" 
-                       className="w-full bg-[#000] border border-[#333] rounded px-2 py-1 text-[10px] focus:border-cyan-500 outline-none"
-                       value={selectedClip.content}
+                       value={selectedClip.metadata.animation?.customizations?.color || '#22d3ee'}
                        onChange={(e) => {
                          const trackId = project.tracks.find(t => t.clips.some(c => c.id === selectedClip.id))?.id;
                          if (trackId) {
-                           onUpdateClip(trackId, selectedClip.id, { content: e.target.value });
+                           onUpdateClip(trackId, selectedClip.id, {
+                             metadata: {
+                               ...selectedClip.metadata,
+                               animation: {
+                                 ...selectedClip.metadata.animation,
+                                 customizations: {
+                                   ...selectedClip.metadata.animation?.customizations,
+                                   color: e.target.value
+                                 }
+                               }
+                             }
+                           });
+                         }
+                       }}
+                     />
+                   </div>
+                   <div className="space-y-1">
+                     <label htmlFor="text-content" className="text-[10px] text-[#666]">Text Content</label>
+                     <input 
+                       id="text-content"
+                       type="text" 
+                       className="w-full bg-[#000] border border-[#333] rounded px-2 py-1 text-[10px] focus:border-cyan-500 outline-none text-white"
+                       value={selectedClip.metadata.animation?.customizations?.text || ''}
+                       onChange={(e) => {
+                         const trackId = project.tracks.find(t => t.clips.some(c => c.id === selectedClip.id))?.id;
+                         if (trackId) {
+                           onUpdateClip(trackId, selectedClip.id, {
+                             metadata: {
+                               ...selectedClip.metadata,
+                               animation: {
+                                 ...selectedClip.metadata.animation,
+                                 customizations: {
+                                   ...selectedClip.metadata.animation?.customizations,
+                                   text: e.target.value
+                                 }
+                               }
+                             }
+                           });
                          }
                        }}
                      />
                    </div>
                  </div>
+
+                 <button 
+                  onClick={handleGenerate}
+                  disabled={isGenerating}
+                  className={`w-full mt-6 py-2 rounded font-bold text-sm flex items-center justify-center gap-2 transition-all ${
+                    isGenerating 
+                      ? 'bg-[#333] text-[#666] cursor-not-allowed' 
+                      : 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-[0_0_15px_rgba(8,145,178,0.3)]'
+                  }`}
+                 >
+                   {isGenerating ? (
+                     <>
+                       <Loader2 size={16} className="animate-spin" />
+                       Generating...
+                     </>
+                   ) : (
+                     <>
+                       <Zap size={16} fill="currentColor" />
+                       Generate Animation
+                     </>
+                   )}
+                 </button>
                </div>
             </div>
           ) : (

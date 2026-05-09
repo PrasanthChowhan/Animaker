@@ -32,6 +32,7 @@ pub fn run() {
             project::create_project,
             project::list_projects,
             project::save_project,
+            project::llm::generate_clip_code,
             project::render::render_project,
             submit_feedback
         ])

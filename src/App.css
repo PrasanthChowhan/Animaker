@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+@theme {
+  --color-terracotta: #cc543a;
+  --color-olive-gray: #5e5e52;
+  --color-parchment: #fdfaf3;
+  --color-near-black: #1a1a1a;
+  --color-border-cream: #e9e4d9;
+  --shadow-whisper: 0 4px 24px rgba(0, 0, 0, 0.06);
+  --radius-generous: 16px;
+}
+
 .app-container {
   width: 100vw;
   height: 100vh;

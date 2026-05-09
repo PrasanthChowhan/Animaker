@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Dashboard from './components/Dashboard';
 import MainEditor from './components/MainEditor';
 import { AnimakerProject } from './types/project';
+import { FeedbackButton } from './components/Feedback/FeedbackButton';
 
 function App() {
   const [activeProject, setActiveProject] = useState<AnimakerProject | null>(null);
@@ -24,6 +25,7 @@ function App() {
       ) : (
         <Dashboard onProjectSelect={handleProjectSelect} />
       )}
+      <FeedbackButton projectState={activeProject} />
     </div>
   );
 }

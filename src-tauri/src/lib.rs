@@ -31,6 +31,7 @@ pub fn run() {
             greet,
             project::create_project,
             project::list_projects,
+            project::save_project,
             project::render::render_project,
             submit_feedback
         ])

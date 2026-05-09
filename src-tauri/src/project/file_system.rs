@@ -32,11 +32,36 @@ impl ProjectStore for FileSystemStore {
         fs::create_dir_all(project_path.join("clips"))
             .map_err(|e| ProjectError::StorageError(e.to_string()))?;
 
+        let (width, height) = match aspect_ratio {
+            "16:9" => (1920, 1080),
+            "9:16" => (1080, 1920),
+            "1:1" => (1080, 1080),
+            _ => (1920, 1080),
+        };
+
         let project = Project {
             name: name.to_string(),
             aspect_ratio: aspect_ratio.to_string(),
             created_at: chrono::Utc::now().timestamp_millis(),
             path: Some(project_path.clone()),
+            width: Some(width),
+            height: Some(height),
+            fps: Some(30),
+            duration: Some(10.0),
+            tracks: Some(vec![
+                super::Track {
+                    id: "v1".to_string(),
+                    name: "V1".to_string(),
+                    track_type: "animation".to_string(),
+                    clips: vec![],
+                },
+                super::Track {
+                    id: "v2".to_string(),
+                    name: "V2".to_string(),
+                    track_type: "animation".to_string(),
+                    clips: vec![],
+                }
+            ]),
         };
 
         let project_json = serde_json::to_string_pretty(&project)
@@ -69,6 +94,20 @@ impl ProjectStore for FileSystemStore {
 
         projects.sort_by(|a, b| b.created_at.cmp(&a.created_at));
         Ok(projects)
+    }
+
+    async fn save(&self, project: Project) -> Result<(), ProjectError> {
+        let project_path = self.base_path.join(&project.name);
+        if !project_path.exists() {
+            return Err(ProjectError::NotFound(project.name));
+        }
+
+        let project_json = serde_json::to_string_pretty(&project)
+            .map_err(|e| ProjectError::StorageError(e.to_string()))?;
+        fs::write(project_path.join("project.json"), project_json)
+            .map_err(|e| ProjectError::StorageError(e.to_string()))?;
+
+        Ok(())
     }
 
     async fn delete(&self, name: &str) -> Result<(), ProjectError> {

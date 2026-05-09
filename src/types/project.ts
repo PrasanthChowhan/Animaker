@@ -1,6 +1,8 @@
 export interface AnimakerProject {
-  id: string;
   name: string;
+  aspect_ratio: string;
+  created_at: number;
+  path?: string;
   width: number;
   height: number;
   fps: number;
@@ -11,18 +13,20 @@ export interface AnimakerProject {
 export interface Track {
   id: string;
   name: string;
-  type: 'media' | 'animation';
+  track_type: 'media' | 'animation';
   clips: Clip[];
 }
 
 export interface Clip {
   id: string;
-  type: 'media' | 'smart';
+  clip_type: 'media' | 'smart';
   start: number; // start time in timeline
   duration: number;
   content: string; // text or file path
   metadata: {
     animation?: {
+      prompt?: string;
+      presetId?: string;
       generatedHtml?: string;
       generatedCss?: string;
       generatedJs?: string;

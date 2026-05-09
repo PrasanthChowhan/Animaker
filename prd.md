@@ -322,7 +322,7 @@ For the initial PRD/prototype, the following are explicitly out of scope:
 ## Status
 
 - [x] **MVP Slice 1: Project Dashboard & File Persistence**
-- [ ] MVP Slice 2: Timeline Clip Management
+- [x] **MVP Slice 2: Timeline Clip Management**
 - [ ] MVP Slice 3: AI Clip Inspector & Prompting
 - [ ] MVP Slice 4: LLM Generation Pipeline
 - [ ] MVP Slice 5: Live Timeline Preview

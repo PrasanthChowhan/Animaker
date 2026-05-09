@@ -96,7 +96,7 @@ export function compileProjectToHTML(project: AnimakerProject): string {
 }
 
 function compileClipToHTML(clip: Clip): string {
-  if (clip.type === 'smart' && clip.metadata.animation?.generatedHtml) {
+  if (clip.clip_type === 'smart' && clip.metadata.animation?.generatedHtml) {
     return `
       <div id="clip-${clip.id}" class="clip-element">
         ${clip.metadata.animation.generatedHtml}

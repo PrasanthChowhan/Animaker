@@ -27,8 +27,64 @@ import { compileProjectToHTML } from '../lib/compiler';
 
 type Page = 'Media' | 'Cut' | 'Edit' | 'Fusion' | 'Color' | 'Fairlight' | 'Deliver';
 
-export default function MainEditor({ project, onBackToDashboard }: { project: AnimakerProject, onBackToDashboard: () => void }) {
+export default function MainEditor({ project: initialProject, onBackToDashboard }: { project: AnimakerProject, onBackToDashboard: () => void }) {
   const [activePage, setActivePage] = useState<Page>('Edit');
+  const [project, setProject] = useState<AnimakerProject>(initialProject);
+  const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
+
+  // Auto-save project on changes
+  useEffect(() => {
+    const save = async () => {
+      try {
+        await invoke('save_project', { project });
+      } catch (err) {
+        console.error('Failed to save project:', err);
+      }
+    };
+    
+    // Simple debounce would be better, but for now just save on every change
+    const timer = setTimeout(save, 1000);
+    return () => clearTimeout(timer);
+  }, [project]);
+
+  const handleAddClip = (trackId: string) => {
+    const newClip = {
+      id: `clip_${Date.now()}`,
+      clip_type: 'smart' as const,
+      start: 0,
+      duration: 5,
+      content: 'New AI Clip',
+      metadata: {
+        animation: {
+          prompt: '',
+          presetId: 'default'
+        }
+      }
+    };
+
+    setProject(prev => ({
+      ...prev,
+      tracks: prev.tracks.map(t => 
+        t.id === trackId ? { ...t, clips: [...t.clips, newClip] } : t
+      )
+    }));
+    setSelectedClipId(newClip.id);
+  };
+
+  const handleUpdateClip = (trackId: string, clipId: string, updates: Partial<any>) => {
+    setProject(prev => ({
+      ...prev,
+      tracks: prev.tracks.map(t => 
+        t.id === trackId 
+          ? { ...t, clips: t.clips.map(c => c.id === clipId ? { ...c, ...updates } : c) } 
+          : t
+      )
+    }));
+  };
+
+  const selectedClip = project.tracks
+    .flatMap(t => t.clips)
+    .find(c => c.id === selectedClipId);
 
   return (
     <div className="flex flex-col h-screen bg-[#111] text-[#e0e0e0] font-sans overflow-hidden select-none">
@@ -57,7 +113,15 @@ export default function MainEditor({ project, onBackToDashboard }: { project: An
 
       {/* Main Content Area */}
       <div className="flex-1 flex overflow-hidden">
-        {activePage === 'Edit' && <EditPage project={project} />}
+        {activePage === 'Edit' && (
+          <EditPage 
+            project={project} 
+            selectedClipId={selectedClipId} 
+            onSelectClip={setSelectedClipId}
+            onAddClip={handleAddClip}
+            onUpdateClip={handleUpdateClip}
+          />
+        )}
         {activePage === 'Deliver' && <DeliverPage project={project} />}
       </div>
 
@@ -81,7 +145,21 @@ export default function MainEditor({ project, onBackToDashboard }: { project: An
   );
 }
 
-function EditPage({ project: _project }: { project: AnimakerProject }) {
+function EditPage({ 
+  project, 
+  selectedClipId, 
+  onSelectClip, 
+  onAddClip, 
+  onUpdateClip 
+}: { 
+  project: AnimakerProject, 
+  selectedClipId: string | null,
+  onSelectClip: (id: string | null) => void,
+  onAddClip: (trackId: string) => void,
+  onUpdateClip: (trackId: string, clipId: string, updates: Partial<any>) => void
+}) {
+  const selectedClip = project.tracks.flatMap(t => t.clips).find(c => c.id === selectedClipId);
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Upper Half: Assets, Viewers, Inspector */}
@@ -89,7 +167,18 @@ function EditPage({ project: _project }: { project: AnimakerProject }) {
         {/* Asset Zone */}
         <div className="w-[20%] border-r border-[#333] flex flex-col bg-[#141414]">
           <div className="p-2 text-xs font-bold border-b border-[#333] bg-[#1a1a1a]">MEDIA POOL</div>
-          <div className="flex-1 p-4 text-[#666] italic text-sm">No clips in pool</div>
+          <div className="flex-1 p-4 overflow-y-auto">
+            <div 
+              onClick={() => onAddClip('v1')}
+              className="p-3 bg-[#222] border border-[#333] rounded hover:border-cyan-500 cursor-pointer group transition-colors"
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <Zap size={14} className="text-cyan-500" />
+                <span className="text-xs font-bold text-cyan-500">AI CLIP</span>
+              </div>
+              <div className="text-[10px] text-[#888]">Drag or click to add animation</div>
+            </div>
+          </div>
         </div>
 
         {/* Dual Viewers */}
@@ -101,8 +190,17 @@ function EditPage({ project: _project }: { project: AnimakerProject }) {
             <ViewerControls time="00:00:00:00" />
           </div>
           <div className="flex-1 flex flex-col">
-            <div className="flex-1 bg-[#080808] relative">
-              <div className="absolute top-2 left-2 text-[10px] bg-black/50 px-1">TIMELINE</div>
+            <div className="flex-1 bg-[#080808] relative flex items-center justify-center">
+              <div className="absolute top-2 left-2 text-[10px] bg-black/50 px-1 z-10">TIMELINE</div>
+              <div 
+                className="bg-black shadow-2xl border border-[#222]" 
+                style={{ 
+                  aspectRatio: project.aspect_ratio.replace(':', '/'),
+                  width: '80%'
+                }}
+              >
+                {/* Preview Frame content */}
+              </div>
             </div>
             <ViewerControls time="00:00:05:12" />
           </div>
@@ -111,13 +209,41 @@ function EditPage({ project: _project }: { project: AnimakerProject }) {
         {/* Inspector Panel */}
         <div className="w-[20%] border-l border-[#333] flex flex-col bg-[#141414]">
           <div className="p-2 text-xs font-bold border-b border-[#333] bg-[#1a1a1a]">INSPECTOR</div>
-          <div className="p-4 space-y-4">
-             <div className="text-[11px] text-[#888] uppercase tracking-wider">Transform</div>
-             <PropertyRow label="Zoom" value="1.000" />
-             <PropertyRow label="Position X" value="0.0" />
-             <PropertyRow label="Position Y" value="0.0" />
-             <PropertyRow label="Rotation" value="0.0" />
-          </div>
+          {selectedClip ? (
+            <div className="p-4 space-y-4">
+               <div className="text-[11px] text-[#888] uppercase tracking-wider">Clip Properties</div>
+               <PropertyRow label="Name" value={selectedClip.content} />
+               <PropertyRow label="Start" value={`${selectedClip.start.toFixed(2)}s`} />
+               <PropertyRow label="Duration" value={`${selectedClip.duration.toFixed(2)}s`} />
+               
+               <div className="pt-4 border-t border-[#333]">
+                 <div className="text-[11px] text-[#888] uppercase tracking-wider mb-2">AI Prompt</div>
+                 <textarea 
+                  className="w-full bg-[#000] border border-[#333] rounded p-2 text-xs text-cyan-500 font-mono h-24 focus:outline-none focus:border-cyan-500"
+                  placeholder="Enter prompt..."
+                  value={selectedClip.metadata.animation?.prompt || ''}
+                  onChange={(e) => {
+                    const trackId = project.tracks.find(t => t.clips.some(c => c.id === selectedClip.id))?.id;
+                    if (trackId) {
+                      onUpdateClip(trackId, selectedClip.id, {
+                        metadata: {
+                          ...selectedClip.metadata,
+                          animation: {
+                            ...selectedClip.metadata.animation,
+                            prompt: e.target.value
+                          }
+                        }
+                      });
+                    }
+                  }}
+                 />
+               </div>
+            </div>
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-[#444] text-xs italic">
+              No clip selected
+            </div>
+          )}
         </div>
       </div>
 
@@ -132,12 +258,66 @@ function EditPage({ project: _project }: { project: AnimakerProject }) {
       {/* Timeline Area */}
       <div className="flex-1 flex flex-col overflow-hidden bg-[#111]">
         <div className="h-6 border-b border-[#333] bg-[#181818] flex items-center">
-            {/* Ruler would go here */}
             <div className="w-[100px] border-r border-[#333] h-full" />
+            <div className="flex-1 h-full relative">
+               {/* Time markers */}
+               {[0, 2, 4, 6, 8, 10].map(s => (
+                 <div key={s} className="absolute top-0 bottom-0 border-l border-[#333] text-[9px] text-[#555] pl-1 pt-1" style={{ left: `${s * 10}%` }}>
+                   {s}s
+                 </div>
+               ))}
+            </div>
         </div>
         <div className="flex-1 overflow-y-auto">
-          <Track label="V2" active={false} />
-          <Track label="V1" active />
+          {project.tracks.slice().reverse().map(track => (
+            <div key={track.id} className="h-12 border-b border-[#222] flex">
+              <div className="w-[100px] border-r border-[#333] flex items-center justify-between px-2 bg-[#181818] shrink-0">
+                <span className="text-[10px] font-bold text-[#666]">{track.name}</span>
+                <div className="flex gap-1">
+                    <div className="w-2 h-2 rounded-full bg-green-900" />
+                    <div className="w-2 h-2 rounded-full bg-blue-900" />
+                </div>
+              </div>
+              <div className="flex-1 relative bg-[#111]">
+                {track.clips.map(clip => (
+                  <div 
+                    key={clip.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectClip(clip.id);
+                    }}
+                    onMouseDown={(e) => {
+                      const startX = e.clientX;
+                      const initialStart = clip.start;
+                      const handleMouseMove = (moveEvent: MouseEvent) => {
+                        const deltaX = moveEvent.clientX - startX;
+                        // Assuming 10% per second as per rulers
+                        const deltaSeconds = deltaX / (window.innerWidth * 0.8 / 10); 
+                        onUpdateClip(track.id, clip.id, { start: Math.max(0, initialStart + deltaSeconds) });
+                      };
+                      const handleMouseUp = () => {
+                        window.removeEventListener('mousemove', handleMouseMove);
+                        window.removeEventListener('mouseup', handleMouseUp);
+                      };
+                      window.addEventListener('mousemove', handleMouseMove);
+                      window.addEventListener('mouseup', handleMouseUp);
+                    }}
+                    className={`absolute top-2 h-8 border rounded flex items-center px-2 text-[9px] cursor-move transition-shadow ${
+                      selectedClipId === clip.id 
+                        ? 'bg-cyan-700/70 border-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.3)] z-10' 
+                        : 'bg-cyan-900/40 border-cyan-700 hover:border-cyan-500'
+                    }`}
+                    style={{ 
+                      left: `${clip.start * 10}%`, 
+                      width: `${clip.duration * 10}%` 
+                    }}
+                  >
+                    {clip.content}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
           <div className="h-2 bg-[#000]" />
           <Track label="A1" active={false} />
           <Track label="A2" active={false} />

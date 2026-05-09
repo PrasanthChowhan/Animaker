@@ -24,7 +24,7 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ onProjectSelect }: DashboardProps) {
-  const [projects, setProjects] = useState<ProjectMetadata[]>([]);
+  const [projects, setProjects] = useState<AnimakerProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showNewModal, setShowNewModal] = useState(false);
   const [newName, setNewName] = useState('');
@@ -37,7 +37,7 @@ export default function Dashboard({ onProjectSelect }: DashboardProps) {
   const loadProjects = async () => {
     setIsLoading(true);
     try {
-      const result = await invoke<ProjectMetadata[]>('list_projects');
+      const result = await invoke<AnimakerProject[]>('list_projects');
       setProjects(result);
     } catch (err) {
       console.error('Failed to list projects:', err);
@@ -50,48 +50,19 @@ export default function Dashboard({ onProjectSelect }: DashboardProps) {
     if (!newName.trim()) return;
 
     try {
-      const result = await invoke<ProjectMetadata>('create_project', {
+      const result = await invoke<AnimakerProject>('create_project', {
         name: newName,
         aspectRatio: newAspectRatio
       });
 
-      // Map basic project metadata to full AnimakerProject
-      const [width, height] = newAspectRatio.split(':').map(Number);
-      const fullProject: AnimakerProject = {
-        id: result.name, // Use name as ID for now
-        name: result.name,
-        width: width === 16 ? 1920 : 1080,
-        height: height === 9 ? 1080 : 1920,
-        fps: 30,
-        duration: 5,
-        tracks: [
-          { id: 'v1', name: 'V1', type: 'animation', clips: [] }
-        ]
-      };
-
-      onProjectSelect(fullProject);
+      onProjectSelect(result);
     } catch (err) {
       console.error('Failed to create project:', err);
     }
   };
 
-  const handleOpenProject = (p: ProjectMetadata) => {
-    const [widthStr, heightStr] = p.aspect_ratio.split(':');
-    const width = Number(widthStr);
-    const height = Number(heightStr);
-
-    const fullProject: AnimakerProject = {
-      id: p.name,
-      name: p.name,
-      width: width === 16 ? 1920 : 1080,
-      height: height === 9 ? 1080 : 1920,
-      fps: 30,
-      duration: 5,
-      tracks: [
-        { id: 'v1', name: 'V1', type: 'animation', clips: [] }
-      ]
-    };
-    onProjectSelect(fullProject);
+  const handleOpenProject = (p: AnimakerProject) => {
+    onProjectSelect(p);
   };
 
   return (

@@ -9,5 +9,13 @@
 - Verified backend project persistence with Rust tests.
 - Verified frontend rendering with Vitest.
 
+## MVP Slice 2: Timeline Clip Management (COMPLETED)
+- Implemented core timeline state in MainEditor with React.
+- Added ability to create 'AI Clips' from the Media Pool.
+- Implemented drag-and-drop repositioning for clips within tracks.
+- Integrated clip selection and highlighting.
+- Implemented 'save_project' Rust command for persistent state.
+- Verified timeline operations with Vitest.
+
 ## Next Up
-- MVP Slice 2: Timeline Clip Management
+- MVP Slice 3: AI Clip Inspector & Prompting

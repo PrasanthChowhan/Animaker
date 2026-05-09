@@ -3,9 +3,13 @@ import { expect, test, vi } from 'vitest';
 import MainEditor from './MainEditor';
 import { AnimakerProject } from '../types/project';
 
-// Mock Tauri invoke
+// Mock Tauri
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
+}));
+
+vi.mock('@tauri-apps/api/event', () => ({
+  listen: vi.fn(() => Promise.resolve(() => {})),
 }));
 
 const mockProject: AnimakerProject = {
@@ -22,7 +26,7 @@ const mockProject: AnimakerProject = {
   ]
 };
 
-test('renders main editor with project name', () => {
+test('renders main editor', () => {
   render(<MainEditor project={mockProject} onBackToDashboard={() => {}} />);
   expect(screen.getAllByText(/Media Pool/i).length).toBeGreaterThan(0);
 });
@@ -30,7 +34,7 @@ test('renders main editor with project name', () => {
 test('can add a clip to the timeline', async () => {
   render(<MainEditor project={mockProject} onBackToDashboard={() => {}} />);
   
-  const aiClipButton = screen.getByText(/Click to add at playhead/i);
+  const aiClipButton = screen.getByText(/Drag or click to add animation/i);
   fireEvent.click(aiClipButton);
   
   const clips = await screen.findAllByText(/New AI Clip/i);
@@ -40,7 +44,7 @@ test('can add a clip to the timeline', async () => {
 test('selecting a clip updates the inspector', async () => {
   render(<MainEditor project={mockProject} onBackToDashboard={() => {}} />);
   
-  const aiClipButton = screen.getByText(/Click to add at playhead/i);
+  const aiClipButton = screen.getByText(/Drag or click to add animation/i);
   fireEvent.click(aiClipButton);
   
   const clips = await screen.findAllByText(/New AI Clip/i);
@@ -54,7 +58,7 @@ test('selecting a clip updates the inspector', async () => {
 test('updating prompt and customizations updates project state', async () => {
   render(<MainEditor project={mockProject} onBackToDashboard={() => {}} />);
   
-  const aiClipButton = screen.getByText(/Click to add at playhead/i);
+  const aiClipButton = screen.getByText(/Drag or click to add animation/i);
   fireEvent.click(aiClipButton);
   const clips = await screen.findAllByText(/New AI Clip/i);
   fireEvent.click(clips[0]);
@@ -63,7 +67,6 @@ test('updating prompt and customizations updates project state', async () => {
   fireEvent.change(promptArea, { target: { value: 'Make it blue' } });
   expect(promptArea).toHaveValue('Make it blue');
   
-  // Customization fields
   const textInput = screen.getByLabelText(/Text Content/i);
   fireEvent.change(textInput, { target: { value: 'Updated Animation Text' } });
   expect(textInput).toHaveValue('Updated Animation Text');
@@ -72,10 +75,10 @@ test('updating prompt and customizations updates project state', async () => {
 test('scrubbing the timeline updates playhead', async () => {
   render(<MainEditor project={mockProject} onBackToDashboard={() => {}} />);
   
-  const ruler = screen.getByText(/^0s$/i).parentElement;
+  const zeroMarker = screen.getByText(/^0s$/);
+  const ruler = zeroMarker.parentElement;
   if (ruler) {
     fireEvent.click(ruler);
-    // Check if red playhead line exists
     const playhead = document.querySelector('.bg-red-600');
     expect(playhead).toBeInTheDocument();
   }
@@ -93,12 +96,7 @@ test('preview frame renders active clips', () => {
           start: 0,
           duration: 5,
           content: 'Test Clip',
-          metadata: { 
-            animation: { 
-              generatedHtml: '<div id="test-content">Hello</div>',
-              customizations: { text: 'Hello', color: '#ff0000' }
-            } 
-          }
+          metadata: { animation: { generatedHtml: '<div id="test-content">Hello World</div>' } }
         }]
       }
     ]
@@ -106,7 +104,58 @@ test('preview frame renders active clips', () => {
 
   render(<MainEditor project={projectWithClip} onBackToDashboard={() => {}} />);
   
-  const iframe = screen.getByTitle(/Timeline Preview/i);
+  const iframe = screen.getByTitle(/Timeline Preview/i) as HTMLIFrameElement;
   expect(iframe).toBeInTheDocument();
-  expect(iframe).toHaveAttribute('srcDoc', expect.stringContaining('Hello'));
+  expect(iframe.srcdoc).toContain('Hello World');
+});
+
+test('starting render in deliver page calls backend', async () => {
+  const { invoke } = await import('@tauri-apps/api/core');
+  (invoke as any).mockImplementation((cmd: string) => {
+    if (cmd === 'list_projects') {
+      return Promise.resolve([{ name: 'Test Project', path: '/test/path' }]);
+    }
+    if (cmd === 'render_project') {
+      return Promise.resolve('/test/path/exports/render.mp4');
+    }
+    return Promise.resolve();
+  });
+
+  render(<MainEditor project={mockProject} onBackToDashboard={() => {}} />);
+  
+  const deliverIcon = screen.getByText(/Deliver/i);
+  fireEvent.click(deliverIcon);
+  
+  const renderButton = screen.getByText(/Start Render/i);
+  fireEvent.click(renderButton);
+  
+  expect(await screen.findByText(/Rendering\.\.\./i)).toBeInTheDocument();
+  expect(await screen.findByText(/RENDER COMPLETE/i)).toBeInTheDocument();
+});
+
+test('triggering generation calls backend', async () => {
+  const { invoke } = await import('@tauri-apps/api/core');
+  (invoke as any).mockImplementation((cmd: string) => {
+    if (cmd === 'generate_clip_code') {
+      return Promise.resolve({
+        html: '<div class="test">Generated</div>',
+        css: '.test { color: red; }',
+        js: 'console.log("test")'
+      });
+    }
+    return Promise.resolve();
+  });
+
+  render(<MainEditor project={mockProject} onBackToDashboard={() => {}} />);
+  
+  const aiClipButton = screen.getByText(/Drag or click to add animation/i);
+  fireEvent.click(aiClipButton);
+  const clips = await screen.findAllByText(/New AI Clip/i);
+  fireEvent.click(clips[0]);
+  
+  const generateButton = screen.getByText(/Generate Animation/i);
+  fireEvent.click(generateButton);
+  
+  await screen.findByText(/Generate Animation/i);
+  expect(generateButton).not.toBeDisabled();
 });

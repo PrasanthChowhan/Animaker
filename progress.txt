@@ -25,18 +25,23 @@
 - Verified inspector updates and state persistence with Vitest.
 
 ## MVP Slice 4: LLM Generation Pipeline (COMPLETED)
-- Implemented `generate_clip_code` Rust command using `reqwest` for Anthropic API calls.
-- Added support for mock responses when API key is missing to ensure development continuity.
-- Integrated 'Generate Animation' button in the Inspector with loading feedback.
-- Successfully parsed and persisted generated HTML, CSS, and JS to clip metadata.
-- Verified end-to-end generation trigger and state updates with Vitest.
+- Implemented Rust command `generate_clip_code` with Anthropic API integration.
+- Added fallback mock generation for development without API keys.
+- Wired 'Generate Animation' button in the Inspector to the backend.
+- Stored generated HTML/CSS/JS in the clip metadata.
 
 ## MVP Slice 5: Live Timeline Preview (COMPLETED)
-- Integrated LLM-generated HTML/CSS/JS into a real-time Timeline Viewer.
-- Implemented `PreviewFrame` using an iframe and GSAP scrubbing logic.
-- Added a functional playhead and timeline ruler for precise scrubbing.
-- Supported multi-track layer stacking in the live preview monitor.
-- Verified preview rendering and scrubbing behavior with Vitest.
+- Implemented a playhead and ruler-based scrubber in the timeline.
+- Created a `PreviewFrame` component using an iframe and `srcDoc`.
+- Integrated GSAP seeking within the preview to match the playhead position.
+- Supported track stacking and real-time scrubbing feedback.
+- Verified preview rendering and scrubbing with Vitest.
+
+## MVP Slice 6: Local MP4 Export (COMPLETED)
+- Implemented `render_project` Rust command using `hyperframes` CLI.
+- Added progress feedback (percentage) from the render process to the UI.
+- Wired the 'Start Render' button in the Deliver page.
+- Ensured final MP4 is saved to the project's exports/ folder.
 
 ## Next Up
-- MVP Slice 6: Local MP4 Export
+- Transcription & Word-level Timing (MVP+)

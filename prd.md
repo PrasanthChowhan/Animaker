@@ -326,4 +326,4 @@ For the initial PRD/prototype, the following are explicitly out of scope:
 - [x] **MVP Slice 3: AI Clip Inspector & Prompting**
 - [x] **MVP Slice 4: LLM Generation Pipeline**
 - [x] **MVP Slice 5: Live Timeline Preview**
-- [ ] MVP Slice 6: Local MP4 Export
+- [x] **MVP Slice 6: Local MP4 Export**

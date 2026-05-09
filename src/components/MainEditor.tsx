@@ -57,7 +57,11 @@ export default function MainEditor({ project: initialProject, onBackToDashboard 
       metadata: {
         animation: {
           prompt: '',
-          presetId: 'default'
+          presetId: 'default',
+          customizations: {
+            text: 'New AI Clip',
+            color: '#22d3ee'
+          }
         }
       }
     };
@@ -95,9 +99,7 @@ export default function MainEditor({ project: initialProject, onBackToDashboard 
           </button>
         </div>
         <div className="flex gap-4">
-          <button className="flex items-center gap-2 hover:bg-[#2a2a2a] px-2 py-1 rounded text-sm font-medium">Mixer</button>
-          <button className="flex items-center gap-2 hover:bg-[#2a2a2a] px-2 py-1 rounded text-sm font-medium">Metadata</button>
-          <button className="flex items-center gap-2 bg-[#2a2a2a] px-2 py-1 rounded text-sm border border-[#444] font-medium">
+          <button className="flex items-center gap-2 bg-[#2a2a2a] px-2 py-1 rounded text-sm border border-[#444]">
             <Info size={16} /> Inspector
           </button>
         </div>
@@ -123,11 +125,7 @@ export default function MainEditor({ project: initialProject, onBackToDashboard 
       <div className="h-12 border-t border-[#333] flex items-center justify-between px-4 bg-[#181818]">
         <div className="flex-1 flex justify-center gap-8">
           <PageIcon icon={<LayoutPanelLeft size={20} />} label="Media" active={activePage === 'Media'} onClick={() => setActivePage('Media')} />
-          <PageIcon icon={<Scissors size={20} />} label="Cut" active={activePage === 'Cut'} onClick={() => setActivePage('Cut')} />
           <PageIcon icon={<Film size={20} />} label="Edit" active={activePage === 'Edit'} onClick={() => setActivePage('Edit')} />
-          <PageIcon icon={<Wand2 size={20} />} label="Fusion" active={activePage === 'Fusion'} onClick={() => setActivePage('Fusion')} />
-          <PageIcon icon={<Palette size={20} />} label="Color" active={activePage === 'Color'} onClick={() => setActivePage('Color')} />
-          <PageIcon icon={<Music size={20} />} label="Fairlight" active={activePage === 'Fairlight'} onClick={() => setActivePage('Fairlight')} />
           <PageIcon icon={<Send size={20} />} label="Deliver" active={activePage === 'Deliver'} onClick={() => setActivePage('Deliver')} />
         </div>
         <div className="flex gap-4 text-[#888]">
@@ -161,6 +159,7 @@ function EditPage({
 
   const handleGenerate = async () => {
     if (!selectedClip) return;
+    
     setIsGenerating(true);
     try {
       const result = await invoke<any>('generate_clip_code', {
@@ -207,30 +206,19 @@ function EditPage({
             >
               <div className="flex items-center gap-2 mb-1">
                 <Zap size={14} className="text-cyan-500" />
-                <span className="text-xs font-bold text-cyan-500 uppercase tracking-tighter">AI Clip</span>
+                <span className="text-xs font-bold text-cyan-500">AI CLIP</span>
               </div>
-              <div className="text-[10px] text-[#888]">Click to add at playhead</div>
+              <div className="text-[10px] text-[#888]">Drag or click to add animation</div>
             </div>
           </div>
         </div>
 
         {/* Viewers */}
         <div className="flex-1 flex bg-[#000] gap-1 p-1">
-          <div className="flex-1 flex flex-col bg-[#080808] relative">
-            <div className="absolute top-2 left-2 text-[10px] bg-black/50 px-1 uppercase tracking-widest text-[#555]">Source</div>
-            <div className="flex-1" />
-            <ViewerControls time="00:00:00:00" />
-          </div>
-          <div className="flex-1 flex flex-col bg-[#080808] relative">
-            <div className="absolute top-2 left-2 text-[10px] bg-black/50 px-1 uppercase tracking-widest text-cyan-500 z-10">Timeline Preview</div>
-            <div className="flex-1 flex items-center justify-center p-4">
-               <div 
-                className="bg-black shadow-2xl border border-[#222] overflow-hidden relative" 
-                style={{ 
-                  aspectRatio: project.aspect_ratio.replace(':', '/'),
-                  width: '90%'
-                }}
-              >
+          <div className="flex-1 flex flex-col">
+            <div className="flex-1 bg-[#080808] relative flex items-center justify-center">
+              <div className="absolute top-2 left-2 text-[10px] bg-black/50 px-1 z-10 uppercase">Timeline Preview</div>
+              <div className="bg-black shadow-2xl border border-[#222] overflow-hidden relative" style={{ aspectRatio: project.aspect_ratio.replace(':', '/'), width: '80%' }}>
                 <PreviewFrame project={project} currentTime={playheadPosition} />
               </div>
             </div>
@@ -238,43 +226,35 @@ function EditPage({
           </div>
         </div>
 
-        {/* Inspector */}
+        {/* Inspector Panel */}
         <div className="w-[20%] border-l border-[#333] flex flex-col bg-[#141414]">
           <div className="p-2 text-xs font-bold border-b border-[#333] bg-[#1a1a1a]">INSPECTOR</div>
           {selectedClip ? (
             <div className="p-4 space-y-4">
-               <div className="text-[11px] text-[#888] uppercase tracking-wider font-bold">Clip Properties</div>
+               <div className="text-[11px] text-[#888] uppercase tracking-wider">Clip Properties</div>
                <PropertyRow label="Name" value={selectedClip.content} />
-               <PropertyRow label="Start" value={`${selectedClip.start.toFixed(2)}s`} />
-               <PropertyRow label="Duration" value={`${selectedClip.duration.toFixed(2)}s`} />
                
-               <div className="pt-4 border-t border-[#333] space-y-4">
-                 <div>
-                   <label htmlFor="ai-prompt" className="text-[11px] text-[#888] uppercase tracking-wider mb-2 block">AI Prompt</label>
-                   <textarea 
-                    id="ai-prompt"
-                    className="w-full bg-[#000] border border-[#333] rounded p-2 text-xs text-cyan-500 font-mono h-24 focus:outline-none focus:border-cyan-500"
-                    placeholder="Enter prompt..."
-                    value={selectedClip.metadata.animation?.prompt || ''}
-                    onChange={(e) => {
-                      const trackId = project.tracks.find(t => t.clips.some(c => c.id === selectedClip.id))?.id;
-                      if (trackId) {
-                        onUpdateClip(trackId, selectedClip.id, {
-                          metadata: {
-                            ...selectedClip.metadata,
-                            animation: {
-                              ...selectedClip.metadata.animation,
-                              prompt: e.target.value
-                            }
-                          }
-                        });
-                      }
-                    }}
-                   />
-                 </div>
+               <div className="pt-4 border-t border-[#333]">
+                 <div className="text-[11px] text-[#888] uppercase tracking-wider mb-2">AI Prompt</div>
+                 <textarea 
+                  className="w-full bg-[#000] border border-[#333] rounded p-2 text-xs text-cyan-500 font-mono h-24 focus:outline-none focus:border-cyan-500 mb-4"
+                  placeholder="Enter prompt..."
+                  value={selectedClip.metadata.animation?.prompt || ''}
+                  onChange={(e) => {
+                    const trackId = project.tracks.find(t => t.clips.some(c => c.id === selectedClip.id))?.id;
+                    if (trackId) {
+                      onUpdateClip(trackId, selectedClip.id, {
+                        metadata: {
+                          ...selectedClip.metadata,
+                          animation: { ...selectedClip.metadata.animation, prompt: e.target.value }
+                        }
+                      });
+                    }
+                  }}
+                 />
 
+                 <div className="text-[11px] text-[#888] uppercase tracking-wider mb-2">Customization</div>
                  <div className="space-y-3">
-                   <div className="text-[11px] text-[#888] uppercase tracking-wider font-bold">Customization</div>
                    <div className="flex items-center justify-between">
                      <label htmlFor="primary-color" className="text-[10px] text-[#666]">Primary Color</label>
                      <input 
@@ -290,10 +270,7 @@ function EditPage({
                                ...selectedClip.metadata,
                                animation: {
                                  ...selectedClip.metadata.animation,
-                                 customizations: {
-                                   ...selectedClip.metadata.animation?.customizations,
-                                   color: e.target.value
-                                 }
+                                 customizations: { ...selectedClip.metadata.animation?.customizations, color: e.target.value }
                                }
                              }
                            });
@@ -316,10 +293,7 @@ function EditPage({
                                ...selectedClip.metadata,
                                animation: {
                                  ...selectedClip.metadata.animation,
-                                 customizations: {
-                                   ...selectedClip.metadata.animation?.customizations,
-                                   text: e.target.value
-                                 }
+                                 customizations: { ...selectedClip.metadata.animation?.customizations, text: e.target.value }
                                }
                              }
                            });
@@ -330,70 +304,45 @@ function EditPage({
                  </div>
 
                  <button 
-                  onClick={() => handleGenerate()}
+                  onClick={handleGenerate}
                   disabled={isGenerating}
-                  className={`w-full py-2 rounded font-bold text-sm flex items-center justify-center gap-2 transition-all ${
-                    isGenerating 
-                      ? 'bg-[#333] text-[#666] cursor-not-allowed' 
-                      : 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-[0_0_15px_rgba(8,145,178,0.3)]'
+                  className={`w-full mt-6 py-2 rounded font-bold text-sm flex items-center justify-center gap-2 transition-all ${
+                    isGenerating ? 'bg-[#333] text-[#666] cursor-not-allowed' : 'bg-cyan-600 hover:bg-cyan-500 text-white'
                   }`}
                  >
-                   {isGenerating ? (
-                     <>
-                       <Loader2 size={16} className="animate-spin" />
-                       Generating...
-                     </>
-                   ) : (
-                     <>
-                       <Zap size={16} fill="currentColor" />
-                       Generate Animation
-                     </>
-                   )}
+                   {isGenerating ? <><Loader2 size={16} className="animate-spin" /> Generating...</> : <><Zap size={16} fill="currentColor" /> Generate Animation</>}
                  </button>
                </div>
             </div>
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-[#444] text-xs italic">
-              No clip selected
-            </div>
-          )}
+          ) : <div className="flex-1 flex items-center justify-center text-[#444] text-xs italic">No clip selected</div>}
         </div>
       </div>
 
-      {/* Timeline */}
+      {/* Central Toolbar */}
+      <div className="h-8 border-b border-[#333] flex items-center px-4 bg-[#1a1a1a] gap-4">
+        <MousePointer2 size={16} className="text-cyan-500" />
+        <Scissors size={16} className="text-[#888]" />
+      </div>
+
+      {/* Timeline Area */}
       <div className="flex-1 flex flex-col overflow-hidden bg-[#111]">
         <div 
           className="h-6 border-b border-[#333] bg-[#181818] flex items-center relative cursor-crosshair"
           onClick={(e) => {
             const rect = e.currentTarget.getBoundingClientRect();
             const x = e.clientX - rect.left - 100;
-            if (x >= 0) {
-              const pos = (x / (rect.width - 100)) * project.duration;
-              onPlayheadChange(pos);
-            }
+            if (x >= 0) onPlayheadChange((x / (rect.width - 100)) * 10);
           }}
         >
             <div className="w-[100px] border-r border-[#333] h-full" />
             <div className="flex-1 h-full relative">
                {[0, 2, 4, 6, 8, 10].map(s => (
-                 <div key={s} className="absolute top-0 bottom-0 border-l border-[#333] text-[9px] text-[#555] pl-1 pt-1" style={{ left: `${(s / project.duration) * 100}%` }}>
-                   {s}s
-                 </div>
+                 <div key={s} className="absolute top-0 bottom-0 border-l border-[#333] text-[9px] text-[#555] pl-1 pt-1" style={{ left: `${s * 10}%` }}>{s}s</div>
                ))}
-               <div 
-                 className="absolute top-0 bottom-0 w-[2px] bg-red-600 z-50 shadow-[0_0_10px_rgba(220,38,38,0.5)]"
-                 style={{ left: `${(playheadPosition / project.duration) * 100}%` }}
-               >
-                 <div className="absolute -top-1 -left-1 w-3 h-3 bg-red-600 rotate-45" />
-               </div>
+               <div className="absolute top-0 bottom-0 w-[2px] bg-red-600 z-50" style={{ left: `${playheadPosition * 10}%` }} />
             </div>
         </div>
-        <div className="flex-1 overflow-y-auto relative">
-          <div 
-             className="absolute top-0 bottom-0 w-[1px] bg-red-900/30 z-20 pointer-events-none"
-             style={{ left: `${100 + (playheadPosition / project.duration * (window.innerWidth - 100))}px` }}
-          />
-
+        <div className="flex-1 overflow-y-auto">
           {project.tracks.slice().reverse().map(track => (
             <div key={track.id} className="h-12 border-b border-[#222] flex">
               <div className="w-[100px] border-r border-[#333] flex items-center justify-between px-2 bg-[#181818] shrink-0">
@@ -403,34 +352,9 @@ function EditPage({
                 {track.clips.map(clip => (
                   <div 
                     key={clip.id}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectClip(clip.id);
-                    }}
-                    onMouseDown={(e) => {
-                      const startX = e.clientX;
-                      const initialStart = clip.start;
-                      const handleMouseMove = (moveEvent: MouseEvent) => {
-                        const deltaX = moveEvent.clientX - startX;
-                        const deltaSeconds = (deltaX / (window.innerWidth - 100)) * project.duration;
-                        onUpdateClip(track.id, clip.id, { start: Math.max(0, initialStart + deltaSeconds) });
-                      };
-                      const handleMouseUp = () => {
-                        window.removeEventListener('mousemove', handleMouseMove);
-                        window.removeEventListener('mouseup', handleMouseUp);
-                      };
-                      window.addEventListener('mousemove', handleMouseMove);
-                      window.addEventListener('mouseup', handleMouseUp);
-                    }}
-                    className={`absolute top-2 h-8 border rounded flex items-center px-2 text-[9px] cursor-move transition-shadow ${
-                      selectedClipId === clip.id 
-                        ? 'bg-cyan-700/70 border-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.3)] z-10' 
-                        : 'bg-cyan-900/40 border-cyan-700 hover:border-cyan-500 text-cyan-100'
-                    }`}
-                    style={{ 
-                      left: `${(clip.start / project.duration) * 100}%`, 
-                      width: `${(clip.duration / project.duration) * 100}%` 
-                    }}
+                    onClick={(e) => { e.stopPropagation(); onSelectClip(clip.id); }}
+                    className={`absolute top-2 h-8 border rounded flex items-center px-2 text-[9px] cursor-move ${selectedClipId === clip.id ? 'bg-cyan-700/70 border-cyan-300' : 'bg-cyan-900/40 border-cyan-700'}`}
+                    style={{ left: `${clip.start * 10}%`, width: `${clip.duration * 10}%` }}
                   >
                     {clip.content}
                   </div>
@@ -438,9 +362,6 @@ function EditPage({
               </div>
             </div>
           ))}
-          <div className="h-2 bg-[#000]" />
-          <Track label="A1" />
-          <Track label="A2" />
         </div>
       </div>
     </div>
@@ -448,46 +369,30 @@ function EditPage({
 }
 
 function PreviewFrame({ project, currentTime }: { project: AnimakerProject, currentTime: number }) {
-  const activeClips = project.tracks
-    .flatMap(t => t.clips)
-    .filter(c => currentTime >= c.start && currentTime <= c.start + c.duration);
-
+  const activeClips = project.tracks.flatMap(t => t.clips).filter(c => currentTime >= c.start && currentTime <= c.start + c.duration);
   const html = `
     <!DOCTYPE html>
     <html>
       <head>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
         <style>
-          body { margin: 0; background: black; overflow: hidden; display: flex; align-items: center; justify-content: center; width: ${project.width}px; height: ${project.height}px; }
-          .container { position: relative; width: 100%; height: 100%; }
+          body { margin: 0; background: black; overflow: hidden; }
+          .container { position: relative; width: ${project.width}px; height: ${project.height}px; }
           .clip-element { position: absolute; inset: 0; }
           ${activeClips.map(c => c.metadata.animation?.generatedCss || '').join('\n')}
         </style>
       </head>
       <body>
         <div class="container">
-          ${activeClips.map(c => c.metadata.animation?.generatedHtml || `<div style="color: #444; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100%; border: 1px dashed #333; font-size: 24px;">${c.content}</div>`).join('\n')}
+          ${activeClips.map(c => c.metadata.animation?.generatedHtml || `<div style="color: white;">${c.content}</div>`).join('\n')}
         </div>
         <script>
-          ${activeClips.map(c => `
-            (function() {
-              const clipTime = ${currentTime} - ${c.start};
-              ${c.metadata.animation?.generatedJs || ''}
-              gsap.globalTimeline.seek(clipTime);
-            })();
-          `).join('\n')}
+          ${activeClips.map(c => `(function() { const clipTime = ${currentTime} - ${c.start}; ${c.metadata.animation?.generatedJs || ''} gsap.globalTimeline.seek(clipTime); })();`).join('\n')}
         </script>
       </body>
     </html>
   `;
-
-  return (
-    <iframe 
-      srcDoc={html}
-      className="w-full h-full border-none pointer-events-none"
-      title="Timeline Preview"
-    />
-  );
+  return <iframe srcDoc={html} className="w-full h-full border-none pointer-events-none" title="Timeline Preview" />;
 }
 
 function DeliverPage({ project }: { project: AnimakerProject }) {
@@ -495,91 +400,47 @@ function DeliverPage({ project }: { project: AnimakerProject }) {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<'idle' | 'rendering' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
-  const [outputPath, setOutputPath] = useState<string | null>(null);
 
   useEffect(() => {
     let unlisten: (() => void) | undefined;
-    const setupListener = async () => {
-      unlisten = await listen<any>('render-progress', (event) => {
-        setProgress(event.payload.percent);
-      });
-    };
-    setupListener();
+    listen<any>('render-progress', (event) => setProgress(event.payload.percent)).then(u => unlisten = u);
     return () => { if (unlisten) unlisten(); };
   }, []);
 
   const handleStartRender = async () => {
-    setIsRendering(true);
-    setProgress(0);
-    setStatus('rendering');
-    setError(null);
+    setIsRendering(true); setProgress(0); setStatus('rendering');
     try {
       const projects = await invoke<any[]>('list_projects');
-      let targetProject = projects.find(p => p.name === project.name);
-      if (!targetProject) {
-        targetProject = await invoke('create_project', { name: project.name, aspectRatio: `${project.width}:${project.height}` });
-      }
-      const projectPath = targetProject.path;
+      const targetProject = projects.find(p => p.name === project.name);
+      const projectPath = targetProject?.path || '';
       const indexHtml = compileProjectToHTML(project);
       const clips = project.tracks.flatMap((track, trackIndex) => 
         track.clips.map(clip => ({ id: clip.id, track_index: trackIndex, clip_type: track.track_type, start: clip.start, duration: clip.duration, content: clip.content }))
       );
-      const result = await invoke<string>('render_project', { projectPath, indexHtml, clips });
-      setOutputPath(result);
+      await invoke('render_project', { projectPath, indexHtml, clips });
       setStatus('success');
     } catch (err: any) {
-      console.error('Render failed:', err);
-      setError(err.toString());
-      setStatus('error');
-    } finally {
-      setIsRendering(false);
-    }
+      console.error(err); setError(err.toString()); setStatus('error');
+    } finally { setIsRendering(false); }
   };
 
   return (
     <div className="flex-1 flex overflow-hidden">
-        <div className="w-[300px] border-r border-[#333] flex flex-col bg-[#141414]">
-            <div className="p-2 text-xs font-bold border-b border-[#333] bg-[#1a1a1a]">RENDER SETTINGS</div>
-            <div className="p-4 space-y-4">
-                <PropertyRow label="Format" value="MP4" />
-                <PropertyRow label="Codec" value="H.264" />
-                <PropertyRow label="Resolution" value={`${project.width}x${project.height}`} />
+        <div className="w-[300px] border-r border-[#333] flex flex-col bg-[#141414] p-4 space-y-4">
+            <div className="text-xs font-bold uppercase">Render Settings</div>
+            <PropertyRow label="Format" value="MP4" />
+            <PropertyRow label="Codec" value="H.264" />
+        </div>
+        <div className="flex-1 flex flex-col bg-[#000] items-center justify-center relative">
+            <div className="aspect-video w-[80%] bg-[#080808] border border-[#222] flex items-center justify-center">
+                {status === 'rendering' && <div className="text-center"><Loader2 className="animate-spin text-cyan-500 mx-auto mb-2" /><div className="text-cyan-500 font-mono">{Math.round(progress)}%</div></div>}
+                {status === 'success' && <div className="text-green-500 font-bold"><CheckCircle2 size={48} className="mx-auto mb-2" /> RENDER COMPLETE</div>}
+                {status === 'error' && <div className="text-red-500 font-bold"><AlertCircle size={48} className="mx-auto mb-2" /> RENDER FAILED</div>}
+                {status === 'idle' && <div className="text-[#333] uppercase">Ready</div>}
             </div>
         </div>
-        <div className="flex-1 flex flex-col bg-[#000]">
-            <div className="flex-1 flex items-center justify-center relative">
-                <div className="aspect-video w-[80%] bg-[#080808] border border-[#222] flex items-center justify-center">
-                    {status === 'rendering' && (
-                        <div className="text-center">
-                            <Loader2 className="animate-spin text-cyan-500 mx-auto mb-4" size={48} />
-                            <div className="text-cyan-500 font-mono text-xl">{Math.round(progress)}%</div>
-                        </div>
-                    )}
-                    {status === 'success' && (
-                        <div className="text-center text-green-500 font-bold">
-                            <CheckCircle2 size={48} className="mx-auto mb-4" /> RENDER COMPLETE
-                        </div>
-                    )}
-                    {status === 'error' && (
-                        <div className="text-center text-red-500 font-bold">
-                            <AlertCircle size={48} className="mx-auto mb-4" /> RENDER FAILED
-                        </div>
-                    )}
-                    {status === 'idle' && <div className="text-[#333] uppercase tracking-widest">Ready</div>}
-                </div>
-            </div>
-            <div className="h-24 border-t border-[#333] bg-[#141414] p-2">
-                {status === 'rendering' && (
-                    <div className="mt-2 h-1 bg-[#222] rounded-full overflow-hidden">
-                        <div className="h-full bg-cyan-500" style={{ width: `${progress}%` }} />
-                    </div>
-                )}
-            </div>
-        </div>
-        <div className="w-[300px] border-l border-[#333] flex flex-col bg-[#141414] p-4">
-            <button onClick={handleStartRender} disabled={isRendering} className="w-full bg-cyan-600 py-2 rounded font-bold">
-                {isRendering ? 'Rendering...' : 'Start Render'}
-            </button>
+        <div className="w-[300px] border-l border-[#333] bg-[#141414] p-4">
+            <button onClick={handleStartRender} disabled={isRendering} className="w-full bg-cyan-600 py-2 rounded font-bold">{isRendering ? 'Rendering...' : 'Start Render'}</button>
         </div>
     </div>
   );
@@ -597,30 +458,14 @@ function ViewerControls({ time }: { time: string }) {
   return (
     <div className="h-10 bg-[#181818] border-t border-[#333] flex items-center justify-between px-4">
       <div className="text-[11px] font-mono text-cyan-500">{time}</div>
-      <div className="flex gap-4 text-[#aaa]">
-        <SkipBack size={14} /> <Play size={14} fill="currentColor" /> <SkipForward size={14} />
-      </div>
+      <div className="flex gap-4 text-[#aaa]"><SkipBack size={14} /><Play size={14} fill="currentColor" /><SkipForward size={14} /></div>
       <div className="text-[11px] font-mono text-[#666]">100%</div>
-    </div>
-  );
-}
-
-function Track({ label }: { label: string }) {
-  return (
-    <div className="h-12 border-b border-[#222] flex">
-      <div className="w-[100px] border-r border-[#333] flex items-center px-2 bg-[#181818]">
-        <span className="text-[10px] font-bold text-[#666]">{label}</span>
-      </div>
-      <div className="flex-1 relative" />
     </div>
   );
 }
 
 function PropertyRow({ label, value }: { label: string, value: string }) {
   return (
-    <div className="flex items-center justify-between text-[11px]">
-      <span className="text-[#888]">{label}</span>
-      <span className="bg-[#000] px-2 py-0.5 rounded border border-[#333] text-cyan-500 font-mono">{value}</span>
-    </div>
+    <div className="flex items-center justify-between text-[11px]"><span className="text-[#888]">{label}</span><span className="bg-[#000] px-2 py-0.5 rounded border border-[#333] text-cyan-500 font-mono">{value}</span></div>
   );
 }

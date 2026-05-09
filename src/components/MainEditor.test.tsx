@@ -30,7 +30,7 @@ test('renders main editor with project name', () => {
 test('can add a clip to the timeline', async () => {
   render(<MainEditor project={mockProject} onBackToDashboard={() => {}} />);
   
-  const aiClipButton = screen.getByText(/Drag or click to add animation/i);
+  const aiClipButton = screen.getByText(/Click to add at playhead/i);
   fireEvent.click(aiClipButton);
   
   const clips = await screen.findAllByText(/New AI Clip/i);
@@ -40,7 +40,7 @@ test('can add a clip to the timeline', async () => {
 test('selecting a clip updates the inspector', async () => {
   render(<MainEditor project={mockProject} onBackToDashboard={() => {}} />);
   
-  const aiClipButton = screen.getByText(/Drag or click to add animation/i);
+  const aiClipButton = screen.getByText(/Click to add at playhead/i);
   fireEvent.click(aiClipButton);
   
   const clips = await screen.findAllByText(/New AI Clip/i);
@@ -54,7 +54,7 @@ test('selecting a clip updates the inspector', async () => {
 test('updating prompt and customizations updates project state', async () => {
   render(<MainEditor project={mockProject} onBackToDashboard={() => {}} />);
   
-  const aiClipButton = screen.getByText(/Drag or click to add animation/i);
+  const aiClipButton = screen.getByText(/Click to add at playhead/i);
   fireEvent.click(aiClipButton);
   const clips = await screen.findAllByText(/New AI Clip/i);
   fireEvent.click(clips[0]);

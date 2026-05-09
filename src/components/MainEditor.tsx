@@ -7,15 +7,11 @@ import {
   Home, 
   Scissors, 
   Film, 
-  Wand2, 
-  Palette, 
-  Music, 
   Send,
   Play,
   SkipBack,
   SkipForward,
   MousePointer2,
-  Magnet,
   Zap,
   Info,
   CheckCircle2,
@@ -29,7 +25,10 @@ type Page = 'Media' | 'Cut' | 'Edit' | 'Fusion' | 'Color' | 'Fairlight' | 'Deliv
 
 export default function MainEditor({ project: initialProject, onBackToDashboard }: { project: AnimakerProject, onBackToDashboard: () => void }) {
   const [activePage, setActivePage] = useState<Page>('Edit');
-  const [project, setProject] = useState<AnimakerProject>(initialProject);
+  const [project, setProject] = useState<AnimakerProject>(() => ({
+    ...initialProject,
+    tracks: initialProject.tracks || []
+  }));
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const [playheadPosition, setPlayheadPosition] = useState(0);
 
@@ -48,6 +47,7 @@ export default function MainEditor({ project: initialProject, onBackToDashboard 
   }, [project]);
 
   const handleAddClip = (trackId: string) => {
+    // ... same newClip
     const newClip = {
       id: `clip_${Date.now()}`,
       clip_type: 'smart' as const,
@@ -66,24 +66,30 @@ export default function MainEditor({ project: initialProject, onBackToDashboard 
       }
     };
 
-    setProject(prev => ({
-      ...prev,
-      tracks: prev.tracks.map(t => 
-        t.id === trackId ? { ...t, clips: [...t.clips, newClip] } : t
-      )
-    }));
+    setProject(prev => {
+      const tracks = prev.tracks || [];
+      return {
+        ...prev,
+        tracks: tracks.map(t => 
+          t.id === trackId ? { ...t, clips: [...t.clips, newClip] } : t
+        )
+      };
+    });
     setSelectedClipId(newClip.id);
   };
 
   const handleUpdateClip = (trackId: string, clipId: string, updates: Partial<any>) => {
-    setProject(prev => ({
-      ...prev,
-      tracks: prev.tracks.map(t => 
-        t.id === trackId 
-          ? { ...t, clips: t.clips.map(c => c.id === clipId ? { ...c, ...updates } : c) } 
-          : t
-      )
-    }));
+    setProject(prev => {
+      const tracks = prev.tracks || [];
+      return {
+        ...prev,
+        tracks: tracks.map(t => 
+          t.id === trackId 
+            ? { ...t, clips: t.clips.map(c => c.id === clipId ? { ...c, ...updates } : c) } 
+            : t
+        )
+      };
+    });
   };
 
   return (
@@ -155,7 +161,8 @@ function EditPage({
   onPlayheadChange: (pos: number) => void
 }) {
   const [isGenerating, setIsGenerating] = useState(false);
-  const selectedClip = project.tracks.flatMap(t => t.clips).find(c => c.id === selectedClipId);
+  const tracks = project.tracks || [];
+  const selectedClip = tracks.flatMap(t => t.clips).find(c => c.id === selectedClipId);
 
   const handleGenerate = async () => {
     if (!selectedClip) return;
@@ -172,7 +179,8 @@ function EditPage({
         }
       });
 
-      const trackId = project.tracks.find(t => t.clips.some(c => c.id === selectedClip.id))?.id;
+      const tracks = project.tracks || [];
+      const trackId = tracks.find(t => t.clips.some(c => c.id === selectedClip.id))?.id;
       if (trackId) {
         onUpdateClip(trackId, selectedClip.id, {
           metadata: {
@@ -241,7 +249,8 @@ function EditPage({
                   placeholder="Enter prompt..."
                   value={selectedClip.metadata.animation?.prompt || ''}
                   onChange={(e) => {
-                    const trackId = project.tracks.find(t => t.clips.some(c => c.id === selectedClip.id))?.id;
+                    const tracks = project.tracks || [];
+      const trackId = tracks.find(t => t.clips.some(c => c.id === selectedClip.id))?.id;
                     if (trackId) {
                       onUpdateClip(trackId, selectedClip.id, {
                         metadata: {
@@ -263,7 +272,8 @@ function EditPage({
                        className="bg-transparent border-none w-6 h-6 cursor-pointer"
                        value={selectedClip.metadata.animation?.customizations?.color || '#22d3ee'}
                        onChange={(e) => {
-                         const trackId = project.tracks.find(t => t.clips.some(c => c.id === selectedClip.id))?.id;
+                         const tracks = project.tracks || [];
+      const trackId = tracks.find(t => t.clips.some(c => c.id === selectedClip.id))?.id;
                          if (trackId) {
                            onUpdateClip(trackId, selectedClip.id, {
                              metadata: {
@@ -286,7 +296,8 @@ function EditPage({
                        className="w-full bg-[#000] border border-[#333] rounded px-2 py-1 text-[10px] focus:border-cyan-500 outline-none text-white"
                        value={selectedClip.metadata.animation?.customizations?.text || ''}
                        onChange={(e) => {
-                         const trackId = project.tracks.find(t => t.clips.some(c => c.id === selectedClip.id))?.id;
+                         const tracks = project.tracks || [];
+      const trackId = tracks.find(t => t.clips.some(c => c.id === selectedClip.id))?.id;
                          if (trackId) {
                            onUpdateClip(trackId, selectedClip.id, {
                              metadata: {
@@ -343,7 +354,7 @@ function EditPage({
             </div>
         </div>
         <div className="flex-1 overflow-y-auto">
-          {project.tracks.slice().reverse().map(track => (
+          {tracks.slice().reverse().map(track => (
             <div key={track.id} className="h-12 border-b border-[#222] flex">
               <div className="w-[100px] border-r border-[#333] flex items-center justify-between px-2 bg-[#181818] shrink-0">
                 <span className="text-[10px] font-bold text-[#666]">{track.name}</span>
@@ -369,7 +380,8 @@ function EditPage({
 }
 
 function PreviewFrame({ project, currentTime }: { project: AnimakerProject, currentTime: number }) {
-  const activeClips = project.tracks.flatMap(t => t.clips).filter(c => currentTime >= c.start && currentTime <= c.start + c.duration);
+  const tracks = project.tracks || [];
+  const activeClips = tracks.flatMap(t => t.clips).filter(c => currentTime >= c.start && currentTime <= c.start + c.duration);
   const html = `
     <!DOCTYPE html>
     <html>
@@ -399,7 +411,6 @@ function DeliverPage({ project }: { project: AnimakerProject }) {
   const [isRendering, setIsRendering] = useState(false);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<'idle' | 'rendering' | 'success' | 'error'>('idle');
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let unlisten: (() => void) | undefined;
@@ -414,13 +425,14 @@ function DeliverPage({ project }: { project: AnimakerProject }) {
       const targetProject = projects.find(p => p.name === project.name);
       const projectPath = targetProject?.path || '';
       const indexHtml = compileProjectToHTML(project);
-      const clips = project.tracks.flatMap((track, trackIndex) => 
+      const tracks = project.tracks || [];
+      const clips = tracks.flatMap((track, trackIndex) => 
         track.clips.map(clip => ({ id: clip.id, track_index: trackIndex, clip_type: track.track_type, start: clip.start, duration: clip.duration, content: clip.content }))
       );
       await invoke('render_project', { projectPath, indexHtml, clips });
       setStatus('success');
     } catch (err: any) {
-      console.error(err); setError(err.toString()); setStatus('error');
+      console.error(err); setStatus('error');
     } finally { setIsRendering(false); }
   };
 

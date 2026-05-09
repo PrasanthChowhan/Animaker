@@ -1,7 +1,8 @@
 import { AnimakerProject, Clip } from '../types/project';
 
 export function compileProjectToHTML(project: AnimakerProject): string {
-  const clips = project.tracks.flatMap((track) => track.clips);
+  const tracks = project.tracks || [];
+  const clips = tracks.flatMap((track) => track.clips);
   
   const elements = clips.map((clip) => compileClipToHTML(clip)).join('\n');
 

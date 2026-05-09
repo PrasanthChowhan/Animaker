@@ -85,11 +85,11 @@ test('scrubbing the timeline updates playhead', async () => {
 });
 
 test('preview frame renders active clips', () => {
-  const projectWithClip = {
+  const projectWithClip: AnimakerProject = {
     ...mockProject,
     tracks: [
       {
-        ...mockProject.tracks[0],
+        ...(mockProject.tracks?.[0] as any),
         clips: [{
           id: 'clip1',
           clip_type: 'smart' as const,

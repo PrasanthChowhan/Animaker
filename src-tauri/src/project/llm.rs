@@ -94,15 +94,25 @@ Use GSAP for all animations. Ensure the animation starts at 0s.
     let content = json["content"][0]["text"].as_str().ok_or("Failed to get text from LLM response")?;
     
     // Try to parse the inner JSON from the text
-    let code: GeneratedCode = serde_json::from_str(content).map_err(|e| {
-        // Fallback: try to extract JSON if Claude wrapped it in markdown
-        if let Some(start) = content.find('{') {
-            if let Some(end) = content.rfind('}') {
-                return serde_json::from_str(&content[start..=end]).map_err(|e2| e2.to_string());
+    let code: GeneratedCode = match serde_json::from_str(content) {
+        Ok(c) => c,
+        Err(e) => {
+            // Fallback: try to extract JSON if Claude wrapped it in markdown
+            if let Some(start) = content.find('{') {
+                if let Some(end) = content.rfind('}') {
+                    if let Ok(extracted) = serde_json::from_str::<GeneratedCode>(&content[start..=end]) {
+                        extracted
+                    } else {
+                        return Err(e.to_string());
+                    }
+                } else {
+                    return Err(e.to_string());
+                }
+            } else {
+                return Err(e.to_string());
             }
         }
-        e.to_string()
-    })?;
+    };
 
     Ok(code)
 }

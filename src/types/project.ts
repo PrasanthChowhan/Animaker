@@ -3,11 +3,11 @@ export interface AnimakerProject {
   aspect_ratio: string;
   created_at: number;
   path?: string;
-  width: number;
-  height: number;
-  fps: number;
-  duration: number; // in seconds
-  tracks: Track[];
+  width?: number;
+  height?: number;
+  fps?: number;
+  duration?: number; // in seconds
+  tracks?: Track[];
 }
 
 export interface Track {

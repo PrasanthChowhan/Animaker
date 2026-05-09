@@ -31,5 +31,12 @@
 - Successfully parsed and persisted generated HTML, CSS, and JS to clip metadata.
 - Verified end-to-end generation trigger and state updates with Vitest.
 
+## MVP Slice 5: Live Timeline Preview (COMPLETED)
+- Integrated LLM-generated HTML/CSS/JS into a real-time Timeline Viewer.
+- Implemented `PreviewFrame` using an iframe and GSAP scrubbing logic.
+- Added a functional playhead and timeline ruler for precise scrubbing.
+- Supported multi-track layer stacking in the live preview monitor.
+- Verified preview rendering and scrubbing behavior with Vitest.
+
 ## Next Up
-- MVP Slice 5: Live Timeline Preview
+- MVP Slice 6: Local MP4 Export

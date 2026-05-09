@@ -1,0 +1,62 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Project</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 1920px;
+            height: 1080px;
+            background-color: black;
+            overflow: hidden;
+        }
+        #canvas {
+            position: relative;
+            width: 1920px;
+            height: 1080px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas" 
+         data-composition-id="main" 
+         data-width="1920" 
+         data-height="1080"
+         data-start="0">
+        <div id="text" style="color:cyan; font-family:sans-serif; font-size:120px; display:flex; justify-content:center; align-items:center; height:100vh;">ANIMAKER</div>
+    </div>
+    <script>
+        // Standard HyperFrames timeline registration
+        window.__timelines = window.__timelines || {};
+        window.__timelines["main"] = {
+            duration: 2,
+            fps: 30
+        };
+
+        // HyperFrames Bridge for CLI rendering
+        window.__hf = {
+            duration: 2,
+            seek: async (time) => {
+                // Control all GSAP animations
+                gsap.globalTimeline.pause();
+                gsap.globalTimeline.totalTime(time);
+                
+                // Wait for next frame to ensure browser has painted
+                return new Promise(resolve => requestAnimationFrame(() => resolve()));
+            }
+        };
+
+        // Initialize animations on load
+        window.addEventListener('load', () => {
+            gsap.globalTimeline.pause();
+            gsap.from("#text", { duration: 1, opacity: 0, scale: 0.5, ease: "back.out(1.7)" });
+        });
+    </script>
+</body>
+</html>

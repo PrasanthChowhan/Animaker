@@ -1,0 +1,13 @@
+# Animaker Progress
+
+## MVP Slice 1: Project Dashboard & File Persistence (COMPLETED)
+- Renamed original Dashboard to MainEditor.
+- Created new Dashboard component as a Project Manager.
+- Implemented project listing from Rust backend.
+- Implemented project creation with modal (name, aspect ratio).
+- Integrated Dashboard into App.tsx with navigation.
+- Verified backend project persistence with Rust tests.
+- Verified frontend rendering with Vitest.
+
+## Next Up
+- MVP Slice 2: Timeline Clip Management

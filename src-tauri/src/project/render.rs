@@ -71,8 +71,9 @@ async fn render_direct(
     let index_path = path.join("index.html");
     fs::write(&index_path, index_html).map_err(|e| e.to_string())?;
 
-    let output_file = exports_dir.join(format!("render_{}.mp4", chrono::Utc::now().timestamp()));
-    let output_file_str = output_file.to_string_lossy().to_string();
+    let filename = format!("render_{}.mp4", chrono::Utc::now().timestamp());
+    let output_file_abs = std::env::current_dir().unwrap().join(&exports_dir).join(filename);
+    let output_file_str = output_file_abs.to_string_lossy().to_string();
 
     run_hyperframes_render(window, path, &output_file_str, "mp4").await?;
 
@@ -88,8 +89,9 @@ async fn render_animations_to_webm(
     let index_path = path.join("index.html");
     fs::write(&index_path, index_html).map_err(|e| e.to_string())?;
 
-    let output_file = exports_dir.join(format!("temp_anim_{}.webm", chrono::Utc::now().timestamp()));
-    let output_file_str = output_file.to_string_lossy().to_string();
+    let filename = format!("temp_anim_{}.webm", chrono::Utc::now().timestamp());
+    let output_file_abs = std::env::current_dir().unwrap().join(&exports_dir).join(filename);
+    let output_file_str = output_file_abs.to_string_lossy().to_string();
 
     run_hyperframes_render(window, path, &output_file_str, "webm").await?;
 

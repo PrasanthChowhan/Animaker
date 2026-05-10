@@ -8,9 +8,6 @@ import {
   Scissors, 
   Film, 
   Send,
-  Play,
-  SkipBack,
-  SkipForward,
   MousePointer2,
   Zap,
   Info,
@@ -20,6 +17,11 @@ import {
 } from 'lucide-react';
 import { AnimakerProject } from '../types/project';
 import { compileProjectToHTML } from '../lib/compiler';
+import { 
+  PlayerAdapter, 
+  PlayerControlsAdapter, 
+  TimelineAdapter
+} from './HF';
 
 type Page = 'Media' | 'Cut' | 'Edit' | 'Fusion' | 'Color' | 'Fairlight' | 'Deliver';
 
@@ -47,7 +49,6 @@ export default function MainEditor({ project: initialProject, onBackToDashboard 
   }, [project]);
 
   const handleAddClip = (trackId: string) => {
-    // ... same newClip
     const newClip = {
       id: `clip_${Date.now()}`,
       clip_type: 'smart' as const,
@@ -60,7 +61,7 @@ export default function MainEditor({ project: initialProject, onBackToDashboard 
           presetId: 'default',
           customizations: {
             text: 'New AI Clip',
-            color: '#22d3ee'
+            color: '#2563eb'
           }
         }
       }
@@ -93,11 +94,11 @@ export default function MainEditor({ project: initialProject, onBackToDashboard 
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#111] text-[#e0e0e0] font-sans overflow-hidden select-none">
+    <div className="flex flex-col h-screen bg-[var(--color-hf-bg-dark)] text-[#e0e0e0] font-[var(--font-hf-body)] overflow-hidden select-none">
       {/* Top Bar */}
-      <div className="h-10 border-b border-[#333] flex items-center justify-between px-4 bg-[#181818]">
+      <div className="h-10 border-b border-[var(--color-studio-border)] flex items-center justify-between px-4 bg-[var(--color-hf-surface-dark)]">
         <div className="flex gap-4">
-          <button className="flex items-center gap-2 hover:bg-[#2a2a2a] px-2 py-1 rounded text-sm text-cyan-400">
+          <button className="flex items-center gap-2 hover:bg-[#2a2a2a] px-2 py-1 rounded text-sm text-[var(--color-hf-accent-blue)]">
             <LayoutPanelLeft size={16} /> Media Pool
           </button>
           <button className="flex items-center gap-2 hover:bg-[#2a2a2a] px-2 py-1 rounded text-sm">
@@ -105,7 +106,7 @@ export default function MainEditor({ project: initialProject, onBackToDashboard 
           </button>
         </div>
         <div className="flex gap-4">
-          <button className="flex items-center gap-2 bg-[#2a2a2a] px-2 py-1 rounded text-sm border border-[#444]">
+          <button className="flex items-center gap-2 bg-[#2a2a2a] px-2 py-1 rounded text-sm border border-[var(--color-studio-border)]">
             <Info size={16} /> Inspector
           </button>
         </div>
@@ -128,7 +129,7 @@ export default function MainEditor({ project: initialProject, onBackToDashboard 
       </div>
 
       {/* Bottom Page Bar */}
-      <div className="h-12 border-t border-[#333] flex items-center justify-between px-4 bg-[#181818]">
+      <div className="h-12 border-t border-[var(--color-studio-border)] flex items-center justify-between px-4 bg-[var(--color-hf-surface-dark)]">
         <div className="flex-1 flex justify-center gap-8">
           <PageIcon icon={<LayoutPanelLeft size={20} />} label="Media" active={activePage === 'Media'} onClick={() => setActivePage('Media')} />
           <PageIcon icon={<Film size={20} />} label="Edit" active={activePage === 'Edit'} onClick={() => setActivePage('Edit')} />
@@ -203,18 +204,18 @@ function EditPage({
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="h-[60%] flex border-b border-[#333]">
+      <div className="h-[60%] flex border-b border-[var(--color-studio-border)]">
         {/* Asset Zone */}
-        <div className="w-[20%] border-r border-[#333] flex flex-col bg-[#141414]">
-          <div className="p-2 text-xs font-bold border-b border-[#333] bg-[#1a1a1a]">MEDIA POOL</div>
+        <div className="w-[20%] border-r border-[var(--color-studio-border)] flex flex-col bg-[var(--color-hf-surface-dark)]">
+          <div className="p-2 text-xs font-bold border-b border-[var(--color-studio-border)] bg-[#1a1a1a] font-[var(--font-hf-display)] uppercase">MEDIA POOL</div>
           <div className="flex-1 p-4 overflow-y-auto">
             <div 
               onClick={() => onAddClip('v1')}
-              className="p-3 bg-[#222] border border-[#333] rounded hover:border-cyan-500 cursor-pointer group transition-colors"
+              className="p-3 bg-[#222] border border-[var(--color-studio-border)] rounded hover:border-[var(--color-hf-accent-blue)] cursor-pointer group transition-colors"
             >
               <div className="flex items-center gap-2 mb-1">
-                <Zap size={14} className="text-cyan-500" />
-                <span className="text-xs font-bold text-cyan-500">AI CLIP</span>
+                <Zap size={14} className="text-[var(--color-hf-accent-blue)]" />
+                <span className="text-xs font-bold text-[var(--color-hf-accent-blue)]">AI CLIP</span>
               </div>
               <div className="text-[10px] text-[#888]">Drag or click to add animation</div>
             </div>
@@ -225,27 +226,33 @@ function EditPage({
         <div className="flex-1 flex bg-[#000] gap-1 p-1">
           <div className="flex-1 flex flex-col">
             <div className="flex-1 bg-[#080808] relative flex items-center justify-center">
-              <div className="absolute top-2 left-2 text-[10px] bg-black/50 px-1 z-10 uppercase">Timeline Preview</div>
-              <div className="bg-black shadow-2xl border border-[#222] overflow-hidden relative" style={{ aspectRatio: project.aspect_ratio.replace(':', '/'), width: '80%' }}>
-                <PreviewFrame project={project} currentTime={playheadPosition} />
-              </div>
+              <div className="absolute top-2 left-2 text-[10px] bg-black/50 px-1 z-10 uppercase font-[var(--font-hf-mono)]">HyperFrames Preview</div>
+              <PlayerAdapter 
+                className="w-[80%]" 
+                project={project}
+                currentTime={playheadPosition}
+              />
             </div>
-            <ViewerControls time={`00:00:${playheadPosition.toFixed(0).padStart(2, '0')}:00`} />
+            <PlayerControlsAdapter 
+              currentTime={playheadPosition}
+              duration={project.duration}
+              onSeek={onPlayheadChange}
+            />
           </div>
         </div>
 
         {/* Inspector Panel */}
-        <div className="w-[20%] border-l border-[#333] flex flex-col bg-[#141414]">
-          <div className="p-2 text-xs font-bold border-b border-[#333] bg-[#1a1a1a]">INSPECTOR</div>
+        <div className="w-[20%] border-l border-[var(--color-studio-border)] flex flex-col bg-[var(--color-hf-surface-dark)]">
+          <div className="p-2 text-xs font-bold border-b border-[var(--color-studio-border)] bg-[#1a1a1a] font-[var(--font-hf-display)] uppercase">INSPECTOR</div>
           {selectedClip ? (
             <div className="p-4 space-y-4">
                <div className="text-[11px] text-[#888] uppercase tracking-wider">Clip Properties</div>
                <PropertyRow label="Name" value={selectedClip.content} />
                
-               <div className="pt-4 border-t border-[#333]">
+               <div className="pt-4 border-t border-[var(--color-studio-border)]">
                  <div className="text-[11px] text-[#888] uppercase tracking-wider mb-2">AI Prompt</div>
                  <textarea 
-                  className="w-full bg-[#000] border border-[#333] rounded p-2 text-xs text-cyan-500 font-mono h-24 focus:outline-none focus:border-cyan-500 mb-4"
+                  className="w-full bg-[#000] border border-[var(--color-studio-border)] rounded p-2 text-xs text-[var(--color-hf-accent-blue)] font-[var(--font-hf-mono)] h-24 focus:outline-none focus:border-[var(--color-hf-accent-blue)] mb-4"
                   placeholder="Enter prompt..."
                   value={selectedClip.metadata.animation?.prompt || ''}
                   onChange={(e) => {
@@ -270,7 +277,7 @@ function EditPage({
                        id="primary-color"
                        type="color" 
                        className="bg-transparent border-none w-6 h-6 cursor-pointer"
-                       value={selectedClip.metadata.animation?.customizations?.color || '#22d3ee'}
+                       value={selectedClip.metadata.animation?.customizations?.color || '#2563eb'}
                        onChange={(e) => {
                          const tracks = project.tracks || [];
       const trackId = tracks.find(t => t.clips.some(c => c.id === selectedClip.id))?.id;
@@ -293,7 +300,7 @@ function EditPage({
                      <input 
                        id="text-content"
                        type="text" 
-                       className="w-full bg-[#000] border border-[#333] rounded px-2 py-1 text-[10px] focus:border-cyan-500 outline-none text-white"
+                       className="w-full bg-[#000] border border-[var(--color-studio-border)] rounded px-2 py-1 text-[10px] focus:border-[var(--color-hf-accent-blue)] outline-none text-white"
                        value={selectedClip.metadata.animation?.customizations?.text || ''}
                        onChange={(e) => {
                          const tracks = project.tracks || [];
@@ -318,7 +325,7 @@ function EditPage({
                   onClick={handleGenerate}
                   disabled={isGenerating}
                   className={`w-full mt-6 py-2 rounded font-bold text-sm flex items-center justify-center gap-2 transition-all ${
-                    isGenerating ? 'bg-[#333] text-[#666] cursor-not-allowed' : 'bg-cyan-600 hover:bg-cyan-500 text-white'
+                    isGenerating ? 'bg-[#333] text-[#666] cursor-not-allowed' : 'bg-[var(--color-hf-accent-blue)] hover:opacity-90 text-white'
                   }`}
                  >
                    {isGenerating ? <><Loader2 size={16} className="animate-spin" /> Generating...</> : <><Zap size={16} fill="currentColor" /> Generate Animation</>}
@@ -330,81 +337,23 @@ function EditPage({
       </div>
 
       {/* Central Toolbar */}
-      <div className="h-8 border-b border-[#333] flex items-center px-4 bg-[#1a1a1a] gap-4">
-        <MousePointer2 size={16} className="text-cyan-500" />
+      <div className="h-8 border-b border-[var(--color-studio-border)] flex items-center px-4 bg-[#1a1a1a] gap-4">
+        <MousePointer2 size={16} className="text-[var(--color-hf-accent-blue)]" />
         <Scissors size={16} className="text-[#888]" />
       </div>
 
       {/* Timeline Area */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-[#111]">
-        <div 
-          className="h-6 border-b border-[#333] bg-[#181818] flex items-center relative cursor-crosshair"
-          onClick={(e) => {
-            const rect = e.currentTarget.getBoundingClientRect();
-            const x = e.clientX - rect.left - 100;
-            if (x >= 0) onPlayheadChange((x / (rect.width - 100)) * 10);
-          }}
-        >
-            <div className="w-[100px] border-r border-[#333] h-full" />
-            <div className="flex-1 h-full relative">
-               {[0, 2, 4, 6, 8, 10].map(s => (
-                 <div key={s} className="absolute top-0 bottom-0 border-l border-[#333] text-[9px] text-[#555] pl-1 pt-1" style={{ left: `${s * 10}%` }}>{s}s</div>
-               ))}
-               <div className="absolute top-0 bottom-0 w-[2px] bg-red-600 z-50" style={{ left: `${playheadPosition * 10}%` }} />
-            </div>
-        </div>
-        <div className="flex-1 overflow-y-auto">
-          {tracks.slice().reverse().map(track => (
-            <div key={track.id} className="h-12 border-b border-[#222] flex">
-              <div className="w-[100px] border-r border-[#333] flex items-center justify-between px-2 bg-[#181818] shrink-0">
-                <span className="text-[10px] font-bold text-[#666]">{track.name}</span>
-              </div>
-              <div className="flex-1 relative bg-[#111]">
-                {track.clips.map(clip => (
-                  <div 
-                    key={clip.id}
-                    onClick={(e) => { e.stopPropagation(); onSelectClip(clip.id); }}
-                    className={`absolute top-2 h-8 border rounded flex items-center px-2 text-[9px] cursor-move ${selectedClipId === clip.id ? 'bg-cyan-700/70 border-cyan-300' : 'bg-cyan-900/40 border-cyan-700'}`}
-                    style={{ left: `${clip.start * 10}%`, width: `${clip.duration * 10}%` }}
-                  >
-                    {clip.content}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className="flex-1 flex flex-col overflow-hidden bg-[var(--color-hf-bg-dark)]">
+        <TimelineAdapter 
+          project={project}
+          currentTime={playheadPosition}
+          onSeek={onPlayheadChange}
+          selectedClipId={selectedClipId}
+          onSelectClip={onSelectClip}
+        />
       </div>
     </div>
   );
-}
-
-function PreviewFrame({ project, currentTime }: { project: AnimakerProject, currentTime: number }) {
-  const tracks = project.tracks || [];
-  const activeClips = tracks.flatMap(t => t.clips).filter(c => currentTime >= c.start && currentTime <= c.start + c.duration);
-  const html = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-        <style>
-          body { margin: 0; background: black; overflow: hidden; }
-          .container { position: relative; width: ${project.width}px; height: ${project.height}px; }
-          .clip-element { position: absolute; inset: 0; }
-          ${activeClips.map(c => c.metadata.animation?.generatedCss || '').join('\n')}
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          ${activeClips.map(c => c.metadata.animation?.generatedHtml || `<div style="color: white;">${c.content}</div>`).join('\n')}
-        </div>
-        <script>
-          ${activeClips.map(c => `(function() { const clipTime = ${currentTime} - ${c.start}; ${c.metadata.animation?.generatedJs || ''} gsap.globalTimeline.seek(clipTime); })();`).join('\n')}
-        </script>
-      </body>
-    </html>
-  `;
-  return <iframe srcDoc={html} className="w-full h-full border-none pointer-events-none" title="Timeline Preview" />;
 }
 
 function DeliverPage({ project }: { project: AnimakerProject }) {
@@ -438,21 +387,21 @@ function DeliverPage({ project }: { project: AnimakerProject }) {
 
   return (
     <div className="flex-1 flex overflow-hidden">
-        <div className="w-[300px] border-r border-[#333] flex flex-col bg-[#141414] p-4 space-y-4">
-            <div className="text-xs font-bold uppercase">Render Settings</div>
+        <div className="w-[300px] border-r border-[var(--color-studio-border)] flex flex-col bg-[var(--color-hf-surface-dark)] p-4 space-y-4">
+            <div className="text-xs font-bold uppercase font-[var(--font-hf-display)]">Render Settings</div>
             <PropertyRow label="Format" value="MP4" />
             <PropertyRow label="Codec" value="H.264" />
         </div>
         <div className="flex-1 flex flex-col bg-[#000] items-center justify-center relative">
             <div className="aspect-video w-[80%] bg-[#080808] border border-[#222] flex items-center justify-center">
-                {status === 'rendering' && <div className="text-center"><Loader2 className="animate-spin text-cyan-500 mx-auto mb-2" /><div className="text-cyan-500 font-mono">{Math.round(progress)}%</div></div>}
+                {status === 'rendering' && <div className="text-center"><Loader2 className="animate-spin text-[var(--color-hf-accent-blue)] mx-auto mb-2" /><div className="text-[var(--color-hf-accent-blue)] font-[var(--font-hf-mono)]">{Math.round(progress)}%</div></div>}
                 {status === 'success' && <div className="text-green-500 font-bold"><CheckCircle2 size={48} className="mx-auto mb-2" /> RENDER COMPLETE</div>}
                 {status === 'error' && <div className="text-red-500 font-bold"><AlertCircle size={48} className="mx-auto mb-2" /> RENDER FAILED</div>}
-                {status === 'idle' && <div className="text-[#333] uppercase">Ready</div>}
+                {status === 'idle' && <div className="text-[#333] uppercase font-[var(--font-hf-display)]">Ready</div>}
             </div>
         </div>
-        <div className="w-[300px] border-l border-[#333] bg-[#141414] p-4">
-            <button onClick={handleStartRender} disabled={isRendering} className="w-full bg-cyan-600 py-2 rounded font-bold">{isRendering ? 'Rendering...' : 'Start Render'}</button>
+        <div className="w-[300px] border-l border-[var(--color-studio-border)] bg-[var(--color-hf-surface-dark)] p-4">
+            <button onClick={handleStartRender} disabled={isRendering} className="w-full bg-[var(--color-hf-accent-blue)] py-2 rounded font-bold">{isRendering ? 'Rendering...' : 'Start Render'}</button>
         </div>
     </div>
   );
@@ -460,24 +409,14 @@ function DeliverPage({ project }: { project: AnimakerProject }) {
 
 function PageIcon({ icon, label, active, onClick }: { icon: any, label: string, active?: boolean, onClick: () => void }) {
   return (
-    <div onClick={onClick} className={`flex flex-col items-center gap-0.5 cursor-pointer ${active ? 'text-cyan-400' : 'text-[#888]'}`}>
-      {icon} <span className="text-[9px] uppercase">{label}</span>
-    </div>
-  );
-}
-
-function ViewerControls({ time }: { time: string }) {
-  return (
-    <div className="h-10 bg-[#181818] border-t border-[#333] flex items-center justify-between px-4">
-      <div className="text-[11px] font-mono text-cyan-500">{time}</div>
-      <div className="flex gap-4 text-[#aaa]"><SkipBack size={14} /><Play size={14} fill="currentColor" /><SkipForward size={14} /></div>
-      <div className="text-[11px] font-mono text-[#666]">100%</div>
+    <div onClick={onClick} className={`flex flex-col items-center gap-0.5 cursor-pointer ${active ? 'text-[var(--color-hf-accent-blue)]' : 'text-[#888]'}`}>
+      {icon} <span className="text-[9px] uppercase font-bold">{label}</span>
     </div>
   );
 }
 
 function PropertyRow({ label, value }: { label: string, value: string }) {
   return (
-    <div className="flex items-center justify-between text-[11px]"><span className="text-[#888]">{label}</span><span className="bg-[#000] px-2 py-0.5 rounded border border-[#333] text-cyan-500 font-mono">{value}</span></div>
+    <div className="flex items-center justify-between text-[11px]"><span className="text-[#888]">{label}</span><span className="bg-[#000] px-2 py-0.5 rounded border border-[var(--color-studio-border)] text-[var(--color-hf-accent-blue)] font-[var(--font-hf-mono)]">{value}</span></div>
   );
 }

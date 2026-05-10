@@ -18,9 +18,17 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
         .setup(|app| {
-            let app_dir = app.path().app_data_dir().expect("Failed to get app data dir");
-            let projects_dir = app_dir.join("projects");
+            let projects_dir = if let Ok(dir) = std::env::var("PROJECTS_DIR") {
+                std::path::PathBuf::from(dir)
+            } else {
+                let app_dir = app.path().app_data_dir().expect("Failed to get app data dir");
+                app_dir.join("projects")
+            };
+            
+            println!("Loading projects from: {:?}", projects_dir);
             
             app.manage(ProjectState {
                 store: Box::new(FileSystemStore::new(projects_dir)),
@@ -30,6 +38,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             greet,
             project::create_project,
+            project::import_project,
             project::list_projects,
             project::save_project,
             project::llm::generate_clip_code,

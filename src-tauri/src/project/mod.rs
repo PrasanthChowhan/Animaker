@@ -1,9 +1,10 @@
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 use async_trait::async_trait;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Project {
+    #[serde(default)]
+    pub id: String,
     pub name: String,
     pub aspect_ratio: String,
     pub created_at: i64,
@@ -34,6 +35,7 @@ pub struct Clip {
 }
 
 #[derive(Debug, thiserror::Error, Serialize)]
+#[allow(dead_code)]
 pub enum ProjectError {
     #[error("Project already exists: {0}")]
     AlreadyExists(String),
@@ -48,8 +50,10 @@ pub enum ProjectError {
 #[async_trait]
 pub trait ProjectStore: Send + Sync {
     async fn create(&self, name: &str, aspect_ratio: &str) -> Result<Project, ProjectError>;
+    async fn import(&self, name: &str, external_path: std::path::PathBuf) -> Result<Project, ProjectError>;
     async fn list(&self) -> Result<Vec<Project>, ProjectError>;
     async fn save(&self, project: Project) -> Result<(), ProjectError>;
+    #[allow(dead_code)]
     async fn delete(&self, name: &str) -> Result<(), ProjectError>;
 }
 
@@ -70,6 +74,15 @@ pub async fn create_project(
     aspect_ratio: String,
 ) -> Result<Project, String> {
     state.store.create(&name, &aspect_ratio).await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn import_project(
+    state: tauri::State<'_, ProjectState>,
+    name: String,
+    path: String,
+) -> Result<Project, String> {
+    state.store.import(&name, std::path::PathBuf::from(path)).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]

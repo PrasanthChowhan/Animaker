@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { open } from '@tauri-apps/plugin-dialog';
 import { 
   Plus, 
+  Upload,
   Film, 
   Clock, 
   ChevronRight, 
@@ -61,26 +63,59 @@ export default function Dashboard({ onProjectSelect }: DashboardProps) {
     }
   };
 
+  const handleImportProject = async () => {
+    try {
+      const selected = await open({
+        directory: true,
+        multiple: false,
+        title: 'Select HyperFrames Project Folder'
+      });
+
+      if (selected && !Array.isArray(selected)) {
+        // Extract name from path
+        const pathParts = selected.split(/[\\/]/);
+        const folderName = pathParts[pathParts.length - 1] || 'Imported Project';
+        
+        const result = await invoke<AnimakerProject>('import_project', {
+          name: folderName,
+          path: selected
+        });
+
+        onProjectSelect(result);
+      }
+    } catch (err) {
+      console.error('Failed to import project:', err);
+    }
+  };
+
   const handleOpenProject = (p: AnimakerProject) => {
     onProjectSelect(p);
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#111] text-[#e0e0e0] font-sans overflow-hidden">
+    <div className="flex flex-col h-screen bg-[var(--color-hf-bg-dark)] text-[#e0e0e0] font-[var(--font-hf-body)] overflow-hidden">
       {/* Header */}
-      <div className="h-16 border-b border-[#333] flex items-center justify-between px-8 bg-[#181818]">
+      <div className="h-16 border-b border-[var(--color-studio-border)] flex items-center justify-between px-8 bg-[var(--color-hf-surface-dark)]">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-cyan-600 rounded flex items-center justify-center">
+          <div className="w-8 h-8 bg-[var(--color-hf-accent-blue)] rounded flex items-center justify-center">
             <Film size={20} className="text-white" />
           </div>
-          <h1 className="text-xl font-bold tracking-tight">Animaker <span className="text-cyan-500 text-sm font-normal ml-2">Project Manager</span></h1>
+          <h1 className="text-xl font-bold tracking-tight font-[var(--font-hf-display)]">Animaker <span className="text-[var(--color-hf-accent-blue)] text-sm font-normal ml-2">Project Manager</span></h1>
         </div>
-        <button 
-          onClick={() => setShowNewModal(true)}
-          className="bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 rounded flex items-center gap-2 transition-colors font-medium text-sm"
-        >
-          <Plus size={18} /> New Project
-        </button>
+        <div className="flex gap-3">
+          <button 
+            onClick={handleImportProject}
+            className="bg-[var(--color-hf-surface-dark)] hover:bg-[#1a1a1a] text-white px-4 py-2 rounded flex items-center gap-2 transition-colors font-medium text-sm border border-[var(--color-studio-border)]"
+          >
+            <Upload size={18} /> Import
+          </button>
+          <button 
+            onClick={() => setShowNewModal(true)}
+            className="bg-[var(--color-hf-accent-blue)] hover:opacity-90 text-white px-4 py-2 rounded flex items-center gap-2 transition-colors font-medium text-sm"
+          >
+            <Plus size={18} /> New Project
+          </button>
+        </div>
       </div>
 
       {/* Projects Grid */}
@@ -91,12 +126,12 @@ export default function Dashboard({ onProjectSelect }: DashboardProps) {
             <p>Loading projects...</p>
           </div>
         ) : projects.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-[#666] border-2 border-dashed border-[#333] rounded-xl">
+          <div className="h-full flex flex-col items-center justify-center text-[#666] border-2 border-dashed border-[var(--color-studio-border)] rounded-xl">
             <Film size={64} className="mb-4 opacity-20" />
             <p className="text-lg">No projects yet</p>
             <button 
               onClick={() => setShowNewModal(true)}
-              className="mt-4 text-cyan-500 hover:underline"
+              className="mt-4 text-[var(--color-hf-accent-blue)] hover:underline"
             >
               Create your first project
             </button>
@@ -117,8 +152,8 @@ export default function Dashboard({ onProjectSelect }: DashboardProps) {
       {/* New Project Modal */}
       {showNewModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#181818] border border-[#333] rounded-xl w-full max-w-md overflow-hidden shadow-2xl">
-            <div className="flex items-center justify-between p-4 border-b border-[#333] bg-[#222]">
+          <div className="bg-[var(--color-hf-surface-dark)] border border-[var(--color-studio-border)] rounded-xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div className="flex items-center justify-between p-4 border-b border-[var(--color-studio-border)] bg-[#1a1a1a]">
               <h2 className="font-bold">Create New Project</h2>
               <button onClick={() => setShowNewModal(false)} className="text-[#888] hover:text-white">
                 <X size={20} />
@@ -134,7 +169,7 @@ export default function Dashboard({ onProjectSelect }: DashboardProps) {
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   placeholder="My Awesome Video"
-                  className="w-full bg-[#000] border border-[#333] rounded px-3 py-2 focus:outline-none focus:border-cyan-500 transition-colors"
+                  className="w-full bg-[#000] border border-[var(--color-studio-border)] rounded px-3 py-2 focus:outline-none focus:border-[var(--color-hf-accent-blue)] transition-colors"
                 />
               </div>
 
@@ -161,7 +196,7 @@ export default function Dashboard({ onProjectSelect }: DashboardProps) {
               <button 
                 onClick={handleCreateProject}
                 disabled={!newName.trim()}
-                className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:bg-[#333] disabled:text-[#666] text-white py-3 rounded-lg font-bold transition-colors mt-4"
+                className="w-full bg-[var(--color-hf-accent-blue)] hover:opacity-90 disabled:bg-[#333] disabled:text-[#666] text-white py-3 rounded-lg font-bold transition-colors mt-4"
               >
                 Create Project
               </button>
@@ -180,11 +215,11 @@ function ProjectCard({ project, onClick }: { project: ProjectMetadata, onClick: 
   return (
     <div 
       onClick={onClick}
-      className="group bg-[#1a1a1a] border border-[#333] rounded-lg overflow-hidden hover:border-cyan-500/50 hover:bg-[#222] transition-all cursor-pointer shadow-lg"
+      className="group bg-[var(--color-hf-surface-dark)] border border-[var(--color-studio-border)] rounded-lg overflow-hidden hover:border-[var(--color-hf-accent-blue)]/50 hover:bg-[#1a1a1a] transition-all cursor-pointer shadow-lg"
     >
-      <div className="aspect-video bg-[#000] flex items-center justify-center relative border-b border-[#333]">
-         <div className={`border-2 border-[#333] group-hover:border-cyan-500/30 transition-colors rounded ${isVertical ? 'w-12 h-20' : 'w-24 h-14'}`} />
-         <div className="absolute inset-0 bg-cyan-500/0 group-hover:bg-cyan-500/5 transition-colors" />
+      <div className="aspect-video bg-[#000] flex items-center justify-center relative border-b border-[var(--color-studio-border)]">
+         <div className={`border-2 border-[#333] group-hover:border-[var(--color-hf-accent-blue)]/30 transition-colors rounded ${isVertical ? 'w-12 h-20' : 'w-24 h-14'}`} />
+         <div className="absolute inset-0 bg-[var(--color-hf-accent-blue)]/0 group-hover:bg-[var(--color-hf-accent-blue)]/5 transition-colors" />
          <div className="absolute top-2 right-2 bg-black/50 text-[10px] px-1.5 py-0.5 rounded border border-white/10">
             {project.aspect_ratio}
          </div>
@@ -192,7 +227,7 @@ function ProjectCard({ project, onClick }: { project: ProjectMetadata, onClick: 
       <div className="p-4">
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-bold truncate text-sm">{project.name}</h3>
-          <ChevronRight size={16} className="text-[#444] group-hover:text-cyan-500 transition-colors" />
+          <ChevronRight size={16} className="text-[#444] group-hover:text-[var(--color-hf-accent-blue)] transition-colors" />
         </div>
         <div className="flex items-center gap-4 text-[#666] text-[11px]">
           <div className="flex items-center gap-1">
@@ -211,8 +246,8 @@ function AspectRatioOption({ active, onClick, icon, label, ratio }: { active: bo
       onClick={onClick}
       className={`p-4 border-2 rounded-lg cursor-pointer transition-all flex flex-col items-center gap-2 ${
         active 
-          ? 'border-cyan-600 bg-cyan-950/20 text-cyan-400' 
-          : 'border-[#333] bg-[#000] text-[#666] hover:border-[#444]'
+          ? 'border-[var(--color-hf-accent-blue)] bg-[var(--color-hf-accent-blue)]/10 text-[var(--color-hf-accent-blue)]' 
+          : 'border-[var(--color-studio-border)] bg-[#000] text-[#666] hover:border-[#444]'
       }`}
     >
       {icon}

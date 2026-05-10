@@ -19,7 +19,7 @@ HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
 HTMLCanvasElement.prototype.toDataURL = vi.fn().mockReturnValue('data:image/png;base64,mock');
 
 // Mock Image
-global.Image = class {
+window.Image = class {
   onload: () => void = () => {};
   src: string = '';
   width: number = 100;

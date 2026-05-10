@@ -3,11 +3,33 @@
 @theme {
   --color-terracotta: #cc543a;
   --color-olive-gray: #5e5e52;
-  --color-parchment: #fdfaf3;
-  --color-near-black: #1a1a1a;
+  --color-parchment: #f6f5f1; /* Matched to HF Cream */
+  --color-near-black: #0a0a0a; /* Matched to HF Near-Black */
   --color-border-cream: #e9e4d9;
   --shadow-whisper: 0 4px 24px rgba(0, 0, 0, 0.06);
   --radius-generous: 16px;
+
+  /* HyperFrames Studio Theme */
+  --color-hf-bg: #f6f5f1;
+  --color-hf-bg-dark: #0a0a0a;
+  --color-hf-surface: #ffffff;
+  --color-hf-surface-dark: #141414;
+  --color-hf-accent-blue: #2563eb;
+  --color-hf-accent-purple: #7c3aed;
+  --color-hf-accent-green: #1a7a0a;
+
+  /* Typography */
+  --font-hf-display: 'ABC Solar Display', sans-serif;
+  --font-hf-body: 'Inter', sans-serif;
+  --font-hf-mono: 'IBM Plex Mono', monospace;
+
+  /* Additional Studio sizes */
+  --font-size-2xs: 0.65rem;
+
+  /* HyperFrames UI Variables */
+  --hf-heading: var(--color-hf-bg-dark);
+  --hf-text-secondary: rgba(10, 10, 10, 0.68);
+  --hf-text-tertiary: rgba(10, 10, 10, 0.46);
 }
 
 .app-container {

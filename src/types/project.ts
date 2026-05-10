@@ -1,4 +1,5 @@
 export interface AnimakerProject {
+  id: string;
   name: string;
   aspect_ratio: string;
   created_at: number;
